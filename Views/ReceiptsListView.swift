@@ -135,22 +135,35 @@ struct ReceiptListRow: View {
 
 // MARK: - Empty State
 struct EmptyReceiptsView: View {
+    @State private var isAnimating = false
+    
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "tray")
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                    .scaleEffect(isAnimating ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                
+                Image(systemName: "tray")
+                    .font(.system(size: 60))
+                    .foregroundColor(.blue)
+            }
             
-            Text("No Receipts")
+            Text("No Receipts Yet")
                 .font(.title2)
                 .fontWeight(.bold)
             
-            Text("Start adding receipts to track your spending")
+            Text("Start adding receipts to track your spending\nand get personalized insights")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 

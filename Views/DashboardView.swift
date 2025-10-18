@@ -11,6 +11,7 @@ import Charts
 struct DashboardView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @State private var selectedGranularity: TimeGranularity = .monthly
+    @State private var isLoading = true
     
     var body: some View {
         NavigationView {
@@ -54,6 +55,9 @@ struct DashboardView: View {
             .navigationTitle("Dashboard")
             .onAppear {
                 viewModel.loadData()
+                withAnimation(.easeIn(duration: 0.3)) {
+                    isLoading = false
+                }
             }
         }
     }
