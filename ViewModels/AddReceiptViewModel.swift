@@ -70,6 +70,7 @@ class AddReceiptViewModel: ObservableObject {
                 isProcessing = false
                 errorMessage = error.localizedDescription
                 showError = true
+                HapticFeedback.error()
             }
         }
     }

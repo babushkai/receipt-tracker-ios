@@ -43,23 +43,43 @@ struct InsightsView: View {
 
 // MARK: - Empty State
 struct EmptyInsightsView: View {
+    @State private var isAnimating = false
+    
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "lightbulb")
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
+            ZStack {
+                Circle()
+                    .fill(Color.yellow.opacity(0.2))
+                    .frame(width: 120, height: 120)
+                    .scaleEffect(isAnimating ? 1.15 : 1.0)
+                    .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimating)
+                
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.yellow)
+                    .rotationEffect(.degrees(isAnimating ? 5 : -5))
+                    .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: isAnimating)
+            }
             
             Text("No Insights Yet")
                 .font(.title2)
                 .fontWeight(.bold)
             
-            Text("Add more receipts to get personalized financial insights and recommendations")
+            Text("Add more receipts to get personalized\nfinancial insights and recommendations")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+            
+            Text("💡 Tip: Add at least 5 receipts to see insights")
+                .font(.caption)
+                .foregroundColor(.blue)
+                .padding(.top, 8)
         }
         .padding(.top, 100)
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 
