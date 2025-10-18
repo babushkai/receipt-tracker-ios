@@ -1,0 +1,22 @@
+# Code Owners
+# These owners will be automatically requested for review when someone opens a PR
+
+# Global owners (for all files)
+* @babushkai
+
+# Core architecture and models
+/Models/ @babushkai
+/Services/ @babushkai
+
+# UI and Views
+/Views/ @babushkai
+/ViewModels/ @babushkai
+
+# Configuration files
+*.xcodeproj @babushkai
+*.plist @babushkai
+.github/ @babushkai
+
+# Documentation
+*.md @babushkai
+
