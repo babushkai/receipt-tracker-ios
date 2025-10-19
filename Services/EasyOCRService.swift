@@ -11,11 +11,11 @@ import Foundation
 
 class EasyOCRService {
     static let shared = EasyOCRService()
-    
-    private let serverURL = "http://localhost:5000"
-    
+
+    private let serverURL = "http://localhost:5001"  // Port 5001 (5000 is used by macOS AirPlay)
+
     private init() {}
-    
+
     // MARK: - Health Check
     func checkServerHealth() async throws -> Bool {
         print("🏥 Checking EasyOCR server health...")
@@ -41,11 +41,16 @@ class EasyOCRService {
     // MARK: - OCR Extraction
     func extractText(from image: UIImage, language: OCRLanguage = .multi) async throws -> String {
         print("\n🎯 ========== EASYOCR EXTRACTION STARTED ==========")
-        print("📸 Image size: \(image.size.width) x \(image.size.height)")
-        print("🌐 Language: \(language.rawValue)")
+        print("📸 Original image size: \(image.size.width) x \(image.size.height)")
+        print("🌐 Language mode: \(language.rawValue)")
+        print("💡 Tip: For Japanese-only receipts, use .japanese for better accuracy")
         
-        // Convert image to base64
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+        // Preprocess image for better OCR quality
+        let preprocessedImage = preprocessImage(image)
+        print("✨ Image preprocessed for better quality")
+        
+        // Convert image to base64 with higher quality for better OCR
+        guard let imageData = preprocessedImage.jpegData(compressionQuality: 0.95) else {
             print("❌ Failed to convert image to JPEG")
             throw EasyOCRError.invalidImage
         }
@@ -280,8 +285,13 @@ class EasyOCRService {
                 if let range = Range(priceRange, in: line) {
                     let priceStr = String(line[range]).replacingOccurrences(of: ",", with: "")
                     if let price = Double(priceStr) {
-                        let itemName = line.replacingOccurrences(of: "$\\(String(format: "%.2f", price))", with: "")
-                            .replacingOccurrences(of: "¥\\(priceStr)", with: "")
+                        // Remove price from line to get item name
+                        let pricePattern1 = "$" + String(format: "%.2f", price)
+                        let pricePattern2 = "¥" + priceStr
+                        
+                        let itemName = line.replacingOccurrences(of: pricePattern1, with: "")
+                            .replacingOccurrences(of: pricePattern2, with: "")
+                            .replacingOccurrences(of: priceStr, with: "")
                             .trimmingCharacters(in: .whitespaces)
                         
                         if !itemName.isEmpty && itemName.count > 2 {
@@ -293,6 +303,62 @@ class EasyOCRService {
         }
         
         return items
+    }
+    
+    // MARK: - Image Preprocessing
+    private func preprocessImage(_ image: UIImage) -> UIImage {
+        guard let cgImage = image.cgImage else { return image }
+        
+        let ciImage = CIImage(cgImage: cgImage)
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        
+        var processedImage = ciImage
+        
+        // Step 1: Upscale if image is too small (helps with OCR)
+        let minDimension = min(ciImage.extent.width, ciImage.extent.height)
+        if minDimension < 1000 {
+            let scale = 2000 / minDimension
+            processedImage = ciImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+            print("📐 Upscaled image by \(String(format: "%.1f", scale))x")
+        }
+        
+        // Step 2: Denoise (reduce grain)
+        if let denoiseFilter = CIFilter(name: "CINoiseReduction") {
+            denoiseFilter.setValue(processedImage, forKey: kCIInputImageKey)
+            denoiseFilter.setValue(0.02, forKey: "inputNoiseLevel")
+            denoiseFilter.setValue(0.4, forKey: "inputSharpness")
+            if let output = denoiseFilter.outputImage {
+                processedImage = output
+            }
+        }
+        
+        // Step 3: Sharpen (improve text clarity)
+        if let sharpenFilter = CIFilter(name: "CISharpenLuminance") {
+            sharpenFilter.setValue(processedImage, forKey: kCIInputImageKey)
+            sharpenFilter.setValue(1.5, forKey: kCIInputSharpnessKey)
+            if let output = sharpenFilter.outputImage {
+                processedImage = output
+            }
+        }
+        
+        // Step 4: Adjust contrast (important for receipts)
+        if let contrastFilter = CIFilter(name: "CIColorControls") {
+            contrastFilter.setValue(processedImage, forKey: kCIInputImageKey)
+            contrastFilter.setValue(1.4, forKey: kCIInputContrastKey)
+            contrastFilter.setValue(0.1, forKey: kCIInputBrightnessKey)
+            contrastFilter.setValue(0.0, forKey: kCIInputSaturationKey) // Grayscale
+            if let output = contrastFilter.outputImage {
+                processedImage = output
+            }
+        }
+        
+        // Convert back to UIImage
+        guard let finalCgImage = context.createCGImage(processedImage, from: processedImage.extent) else {
+            print("⚠️ Preprocessing failed, using original")
+            return image
+        }
+        
+        return UIImage(cgImage: finalCgImage)
     }
 }
 

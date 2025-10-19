@@ -1,0 +1,26 @@
+STARBUCKS COFFEE
+123 MAIN STREET
+BROOKLYN, NY 11201
+Store #09876
+
+Date: 10/19/2024
+Time: 08:15:30
+Barista: Mike
+
+GRANDE LATTE            $5.45
+BLUEBERRY MUFFIN        $3.95
+CROISSANT               $3.25
+
+SUBTOTAL               $12.65
+TAX                     $1.13
+TOTAL                  $13.78
+
+APPLE PAY
+TRANSACTION APPROVED
+
+Member #: 1234567890
+Stars Earned: 39
+
+Thanks for visiting!
+starbucks.com/rewards
+

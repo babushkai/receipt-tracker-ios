@@ -6,6 +6,11 @@
 //
 
 import CoreData
+import Foundation
+
+extension Notification.Name {
+    static let receiptsDidChange = Notification.Name("receiptsDidChange")
+}
 
 struct PersistenceController {
     static let shared = PersistenceController()
@@ -103,6 +108,10 @@ struct PersistenceController {
         }
         
         saveContext()
+        
+        // Notify observers that receipts have changed
+        NotificationCenter.default.post(name: .receiptsDidChange, object: nil)
+        
         return receipt
     }
     
@@ -110,6 +119,9 @@ struct PersistenceController {
         let context = container.viewContext
         context.delete(receipt)
         saveContext()
+        
+        // Notify observers that receipts have changed
+        NotificationCenter.default.post(name: .receiptsDidChange, object: nil)
     }
     
     func fetchReceipts(

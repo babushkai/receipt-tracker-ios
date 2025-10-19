@@ -15,6 +15,16 @@ class ReceiptsListViewModel: ObservableObject {
     @Published var endDate: Date?
     
     private let persistenceController = PersistenceController.shared
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        // Listen for receipt changes
+        NotificationCenter.default.publisher(for: .receiptsDidChange)
+            .sink { [weak self] _ in
+                self?.loadReceipts()
+            }
+            .store(in: &cancellables)
+    }
     
     var hasActiveFilters: Bool {
         selectedCategory != nil || startDate != nil || endDate != nil

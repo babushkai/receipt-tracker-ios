@@ -22,7 +22,7 @@ struct LLMConfig {
     static let anthropic = LLMConfig(
         apiKey: "", // Add your API key here
         apiEndpoint: "https://api.anthropic.com/v1/messages",
-        model: "claude-3-haiku-20240307"
+        model: "claude-sonnet-4-5-20250929"
     )
 }
 
@@ -52,15 +52,25 @@ class LLMService {
     
     // MARK: - Main Method
     func enhanceOCR(rawText: String, config: LLMConfig) async throws -> ParsedReceiptData {
+        print("\n🤖 ========== LLM ENHANCEMENT STARTED ==========")
+        
         guard !config.apiKey.isEmpty else {
+            print("❌ API Key is empty!")
             throw LLMError.missingAPIKey
         }
+        
+        print("📡 API Endpoint: \(config.apiEndpoint)")
+        print("🤖 Model: \(config.model)")
+        print("🔑 API Key: \(String(config.apiKey.prefix(8)))...")
+        print("📝 Raw Text Length: \(rawText.count) characters")
         
         let prompt = buildPrompt(rawText: rawText)
         
         if config.apiEndpoint.contains("anthropic") {
+            print("🧠 Using Anthropic Claude API")
             return try await callAnthropic(prompt: prompt, config: config)
         } else {
+            print("🧠 Using OpenAI API")
             return try await callOpenAI(prompt: prompt, config: config)
         }
     }
@@ -120,7 +130,10 @@ class LLMService {
     
     // MARK: - Anthropic Integration
     private func callAnthropic(prompt: String, config: LLMConfig) async throws -> ParsedReceiptData {
+        print("📤 Sending request to Anthropic API...")
+        
         guard let url = URL(string: config.apiEndpoint) else {
+            print("❌ Invalid URL: \(config.apiEndpoint)")
             throw LLMError.invalidURL
         }
         
@@ -143,30 +156,63 @@ class LLMService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
+        print("⏳ Waiting for API response...")
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ Invalid HTTP response")
             throw LLMError.invalidResponse
         }
         
+        print("📥 Received response with status code: \(httpResponse.statusCode)")
+        
         guard httpResponse.statusCode == 200 else {
+            // Try to parse error message from response
+            if let errorDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = errorDict["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                print("❌ API Error (\(httpResponse.statusCode)): \(message)")
+            } else {
+                print("❌ API Error: Status code \(httpResponse.statusCode)")
+            }
             throw LLMError.apiError(statusCode: httpResponse.statusCode)
         }
+        
+        print("✅ API call successful, parsing response...")
         
         // Parse Anthropic response
         let anthropicResponse = try JSONDecoder().decode(AnthropicResponse.self, from: data)
         guard let content = anthropicResponse.content.first?.text else {
+            print("❌ No content in response")
             throw LLMError.noContent
         }
+        
+        print("📄 Received content (\(content.count) characters)")
         
         // Extract JSON from markdown code block if present
         let jsonContent = extractJSON(from: content)
         
         guard let contentData = jsonContent.data(using: .utf8) else {
+            print("❌ Failed to convert content to data")
             throw LLMError.invalidJSON
         }
         
-        return try JSONDecoder().decode(ParsedReceiptData.self, from: contentData)
+        print("🔍 Parsing structured receipt data...")
+        print("📝 JSON to parse: \(jsonContent)")
+        
+        do {
+            let parsedData = try JSONDecoder().decode(ParsedReceiptData.self, from: contentData)
+            print("✅ Successfully parsed receipt data!")
+            print("🏪 Merchant: \(parsedData.merchantName ?? "unknown")")
+            print("💰 Total: $\(parsedData.totalAmount ?? 0)")
+            print("🤖 ========== LLM ENHANCEMENT COMPLETE ==========\n")
+            return parsedData
+        } catch {
+            print("❌ JSON parsing error: \(error)")
+            print("📝 Failed to parse this JSON:")
+            print(jsonContent)
+            throw LLMError.invalidJSON
+        }
     }
     
     // MARK: - Helper Methods

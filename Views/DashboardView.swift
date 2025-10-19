@@ -12,6 +12,7 @@ struct DashboardView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @State private var selectedGranularity: TimeGranularity = .monthly
     @State private var isLoading = true
+    @State private var viewID = UUID()
     
     var body: some View {
         NavigationView {
@@ -53,11 +54,28 @@ struct DashboardView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Dashboard")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        viewModel.loadData()
+                        HapticFeedback.light()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+            }
             .onAppear {
                 viewModel.loadData()
                 withAnimation(.easeIn(duration: 0.3)) {
                     isLoading = false
                 }
+            }
+            .onChange(of: viewID) { _ in
+                viewModel.loadData()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .receiptsDidChange)) { _ in
+                // Force a visual refresh
+                viewID = UUID()
             }
         }
     }

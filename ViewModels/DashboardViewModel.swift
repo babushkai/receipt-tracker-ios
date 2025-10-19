@@ -17,6 +17,16 @@ class DashboardViewModel: ObservableObject {
     private var granularity: TimeGranularity = .monthly
     private let persistenceController = PersistenceController.shared
     private let analyticsService = AnalyticsService.shared
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        // Listen for receipt changes
+        NotificationCenter.default.publisher(for: .receiptsDidChange)
+            .sink { [weak self] _ in
+                self?.loadData()
+            }
+            .store(in: &cancellables)
+    }
     
     func loadData() {
         let endDate = Date()

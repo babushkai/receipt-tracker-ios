@@ -12,6 +12,7 @@ struct AddReceiptView: View {
     @StateObject private var viewModel = AddReceiptViewModel()
     @State private var showingImagePicker = false
     @State private var showingCamera = false
+    @State private var showingBulkUpload = false
     @State private var sourceType: ImageSourceType = .camera
     
     enum ImageSourceType {
@@ -35,11 +36,25 @@ struct AddReceiptView: View {
                         onPhotoLibraryButtonTap: {
                             sourceType = .photoLibrary
                             showingImagePicker = true
+                        },
+                        onBulkUploadTap: {
+                            showingBulkUpload = true
                         }
                     )
                 }
             }
             .navigationTitle("Add Receipt")
+            .toolbar {
+                if viewModel.processedReceipt == nil && !viewModel.isProcessing {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            showingBulkUpload = true
+                        }) {
+                            Label("Bulk Upload", systemImage: "photo.stack")
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showingCamera) {
                 ImagePicker(
                     sourceType: .camera,
@@ -64,6 +79,9 @@ struct AddReceiptView: View {
             } message: {
                 Text("Receipt saved successfully!")
             }
+            .sheet(isPresented: $showingBulkUpload) {
+                BulkUploadView()
+            }
         }
     }
 }
@@ -72,6 +90,7 @@ struct AddReceiptView: View {
 struct EmptyStateView: View {
     let onCameraButtonTap: () -> Void
     let onPhotoLibraryButtonTap: () -> Void
+    let onBulkUploadTap: () -> Void
     
     var body: some View {
         VStack(spacing: 30) {
@@ -124,6 +143,22 @@ struct EmptyStateView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                
+                Button(action: onBulkUploadTap) {
+                    HStack {
+                        Image(systemName: "photo.stack")
+                        Text("Bulk Upload")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.purple.opacity(0.1))
+                    .foregroundColor(.purple)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.purple.opacity(0.3), lineWidth: 1)
                     )
                 }
             }

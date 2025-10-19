@@ -25,13 +25,36 @@ class OCRService {
     
     // MARK: - Main OCR Processing
     func processReceipt(image: UIImage) async throws -> OCRResult {
-        // Step 1: Extract text using Vision
-        let extractedText = try await extractText(from: image)
+        // Priority 1: Try olmOCR if server is available (BEST free option!)
+        do {
+            if let _ = try? await OlmOCRService.shared.checkServerHealth() {
+                print("🚀 Using olmOCR-7B (state-of-the-art document OCR)")
+                print("💡 7B parameter model specialized for receipts")
+                return try await OlmOCRService.shared.processReceipt(image: image)
+            }
+        } catch {
+            print("⚠️ olmOCR server not available, trying alternatives...")
+        }
         
-        // Step 2: Parse the extracted text
-        let parsedData = parseReceiptText(extractedText)
+        // Priority 2: Try LLM if enabled (excellent quality, costs money)
+        if let llmConfig = AppSettings.shared.getLLMConfig() {
+            print("🤖 Using LLM-enhanced OCR (\(AppSettings.shared.llmProvider.displayName))")
+            return try await processReceiptWithLLM(image: image, llmConfig: llmConfig)
+        }
         
-        return parsedData
+        // Priority 3: Try EasyOCR if server is available (decent, free)
+        do {
+            if let _ = try? await EasyOCRService.shared.checkServerHealth() {
+                print("🎯 Using EasyOCR (fallback multilingual)")
+                return try await EasyOCRService.shared.processReceipt(image: image, language: .multi)
+            }
+        } catch {
+            print("⚠️ EasyOCR server not available, trying Tesseract...")
+        }
+        
+        // Priority 4: Fallback to Tesseract (always available)
+        print("🔍 Using Tesseract OCR (final fallback)")
+        return try await TesseractOCRService.shared.processReceipt(image: image)
     }
     
     // MARK: - Vision Text Recognition
@@ -143,22 +166,32 @@ class OCRService {
     }
     
     private func extractTotal(from text: String) -> Double? {
+        print("🔍 OCR: Extracting total from text:")
+        print(text)
+        
         let totalPatterns = [
             "(?i)total[:\\s]*\\$?([0-9,]+\\.\\d{2})",
             "(?i)amount[:\\s]*\\$?([0-9,]+\\.\\d{2})",
-            "(?i)sum[:\\s]*\\$?([0-9,]+\\.\\d{2})"
+            "(?i)sum[:\\s]*\\$?([0-9,]+\\.\\d{2})",
+            "\\$([0-9,]+\\.\\d{2})\\s*(?i)total",  // Amount before word "total"
+            "(?i)total.*?\\$([0-9,]+\\.\\d{2})",   // More flexible
+            "\\$\\s*([0-9,]+\\.\\d{2})\\s*$"       // Last dollar amount
         ]
         
-        for pattern in totalPatterns {
-            if let regex = try? NSRegularExpression(pattern: pattern),
+        for (index, pattern) in totalPatterns.enumerated() {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
                let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
                match.numberOfRanges > 1,
                let range = Range(match.range(at: 1), in: text) {
                 let amountString = String(text[range]).replacingOccurrences(of: ",", with: "")
-                return Double(amountString)
+                if let amount = Double(amountString) {
+                    print("✅ Found total using pattern \(index): $\(amount)")
+                    return amount
+                }
             }
         }
         
+        print("❌ No total found in text")
         return nil
     }
     

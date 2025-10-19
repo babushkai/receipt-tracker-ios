@@ -1,0 +1,58 @@
+INFO:root:🔧 Initializing EasyOCR readers...
+WARNING:easyocr.easyocr:Using CPU. Note: This module is much faster with a GPU.
+WARNING:easyocr.easyocr:Using CPU. Note: This module is much faster with a GPU.
+WARNING:easyocr.easyocr:Using CPU. Note: This module is much faster with a GPU.
+INFO:root:✅ EasyOCR readers initialized!
+============================================================
+🚀 Starting EasyOCR Server
+============================================================
+📍 Server will run on: http://localhost:5001
+🔍 Endpoints:
+   - GET  /health       → Health check
+   - POST /ocr          → Single image OCR
+   - POST /ocr/batch    → Batch image OCR
+
+🌐 Supported languages:
+   - 'en'    → English only
+   - 'ja'    → Japanese only
+   - 'multi' → English + Japanese (default)
+
+💡 EasyOCR supports 80+ languages!
+💡 Note: Using port 5001 (5000 is used by macOS AirPlay)
+============================================================
+ * Serving Flask app 'easyocr_server'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.13.114:5001
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 16:57:54] "GET /health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 16:58:51] "GET /health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 16:58:59] "GET /health HTTP/1.1" 200 -
+INFO:root:Processing image with language: multi
+/Users/dsuke/Projects/dev/receipt/paddle_env/lib/python3.13/site-packages/torch/utils/data/dataloader.py:692: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  warnings.warn(warn_msg)
+INFO:root:Extracted 39 lines with avg confidence 0.48
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 16:59:12] "POST /ocr HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 17:00:05] "GET /health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 17:04:27] "GET /health HTTP/1.1" 200 -
+INFO:root:Processing image with language: multi
+INFO:root:Extracted 39 lines with avg confidence 0.39
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 17:04:49] "POST /ocr HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 18:40:11] "GET /health HTTP/1.1" 200 -
+INFO:root:Processing image with language: multi
+INFO:root:Extracted 39 lines with avg confidence 0.39
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 18:40:30] "POST /ocr HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 20:02:55] "GET /health HTTP/1.1" 200 -
+INFO:root:Processing image with language: multi
+INFO:werkzeug:127.0.0.1 - - [19/Oct/2025 20:03:19] "POST /ocr HTTP/1.1" 200 -
+)
+
+💡 EasyOCR supports 80+ languages!
+💡 Note: Using port 5001 (5000 is used by macOS AirPlay)
+============================================================
+ * Serving Flask app 'easyocr_server'
+ * Debug mode: off
+Address already in use
+Port 5001 is in use by another program. Either identify and stop that program, or start the server with a different port.

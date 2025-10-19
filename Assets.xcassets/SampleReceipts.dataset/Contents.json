@@ -1,0 +1,21 @@
+{
+  "data" : [
+    {
+      "filename" : "sample_receipt_1.txt",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "sample_receipt_2.txt",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "sample_receipt_3.txt",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+

@@ -1,0 +1,10 @@
+# olmOCR Requirements
+# Based on allenai/olmOCR-7B-0225-preview
+
+flask>=3.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.40.0
+Pillow>=10.0.0
+accelerate>=0.20.0
+
