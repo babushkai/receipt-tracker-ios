@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -35,6 +35,16 @@
 		F546474D997FE3905FE5C4DE /* ReceiptsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77CEB9117BA8422D419699D /* ReceiptsListView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		544DA2982EA4D04A00B9D517 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5379D06E0D4C8E17581F0FB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2C5C8CF27E3E7E6CFF5A9C21;
+			remoteInfo = ReceiptTracker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		00E33A249A9A13921E6C75AD /* AddReceiptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddReceiptView.swift; sourceTree = "<group>"; };
 		0AA90A465883501B80C0035E /* DashboardViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
@@ -46,6 +56,8 @@
 		37E670FF36F213F716C226D0 /* InsightsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
 		4AB7E8AD7293BC8A4722EE9D /* HapticFeedback.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HapticFeedback.swift; sourceTree = "<group>"; };
 		52914A9126FE659AF1304080 /* ReceiptDataModel.xcdatamodel */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcdatamodel; path = ReceiptDataModel.xcdatamodel; sourceTree = "<group>"; };
+		544DA28F2EA4CF9800B9D517 /* ReceiptTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReceiptTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		544DA2942EA4D04A00B9D517 /* ReceiptTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReceiptTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C3EB74E0C995902C47617C1 /* ReceiptTrackerApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptTrackerApp.swift; sourceTree = "<group>"; };
 		6ABB21D37AD3A80211E58E32 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		7485607AFCE69363802E812D /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Vision.framework; sourceTree = DEVELOPER_DIR; };
@@ -59,14 +71,24 @@
 		B22F3E3E13C1E056CC77A43E /* ReceiptsListViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptsListViewModel.swift; sourceTree = "<group>"; };
 		B887C076AE5769232FB38B65 /* PersistenceController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		BCB3C9EA3932CCBF32A57C25 /* AddReceiptViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddReceiptViewModel.swift; sourceTree = "<group>"; };
-		C39F4DD2A3569D4F8C8A0A84 /* ReceiptTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReceiptTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C77CEB9117BA8422D419699D /* ReceiptsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptsListView.swift; sourceTree = "<group>"; };
 		CB23C201883A6958EE4394EB /* AnalyticsService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		E804601A344047FB1EF505D4 /* ReceiptDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptDetailView.swift; sourceTree = "<group>"; };
 		EF25F5CD6C47F7A56F922C51 /* OCRService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		544DA2952EA4D04A00B9D517 /* ReceiptTrackerTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ReceiptTrackerTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		544DA2912EA4D04A00B9D517 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F4AFFA83F6364056447D80CA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -85,6 +107,8 @@
 		3E1469B11A309F6EC68490D9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				544DA28F2EA4CF9800B9D517 /* ReceiptTracker.app */,
+				544DA2942EA4D04A00B9D517 /* ReceiptTrackerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,8 +119,19 @@
 				9F0A26AAD4CD4880BF87179E /* Receipt.swift */,
 				9DC402A936D2E9CC53BC0650 /* ReceiptDataModel.xcdatamodeld */,
 			);
-			name = Models;
 			path = Models;
+			sourceTree = "<group>";
+		};
+		544DA28E2EA4CF9800B9D517 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				6ABB21D37AD3A80211E58E32 /* Foundation.framework */,
+				1718D997CC17A724092CBA1F /* UIKit.framework */,
+				9C85706A856B0EF91C498A2B /* SwiftUI.framework */,
+				0BC31B2CB338DB8C8A564BEE /* CoreData.framework */,
+				7485607AFCE69363802E812D /* Vision.framework */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		689E263DFBFA870070AE8763 = {
@@ -110,7 +145,9 @@
 				EAE9F41B8DADCEAB3B91F739 /* ViewModels */,
 				E5FAB525EA1906591782EACC /* Services */,
 				E8C322F78FAE4347EE119020 /* Utilities */,
+				544DA2952EA4D04A00B9D517 /* ReceiptTrackerTests */,
 				3E1469B11A309F6EC68490D9 /* Products */,
+				544DA28E2EA4CF9800B9D517 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -125,7 +162,6 @@
 				37E670FF36F213F716C226D0 /* InsightsView.swift */,
 				26E25B08AE5123E81C941E29 /* SettingsView.swift */,
 			);
-			name = Views;
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -137,7 +173,6 @@
 				CB23C201883A6958EE4394EB /* AnalyticsService.swift */,
 				88F0A2F39333949A0B4F36FE /* LLMService.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -147,7 +182,6 @@
 				995703E9BA53A0707C51987F /* ImagePicker.swift */,
 				4AB7E8AD7293BC8A4722EE9D /* HapticFeedback.swift */,
 			);
-			name = Utilities;
 			path = Utilities;
 			sourceTree = "<group>";
 		};
@@ -159,7 +193,6 @@
 				B22F3E3E13C1E056CC77A43E /* ReceiptsListViewModel.swift */,
 				9C57DA8E3CCE6B6A69B1311C /* InsightsViewModel.swift */,
 			);
-			name = ViewModels;
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
@@ -180,8 +213,31 @@
 			);
 			name = ReceiptTracker;
 			productName = ReceiptTracker;
-			productReference = C39F4DD2A3569D4F8C8A0A84 /* ReceiptTracker.app */;
+			productReference = 544DA28F2EA4CF9800B9D517 /* ReceiptTracker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		544DA2932EA4D04A00B9D517 /* ReceiptTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 544DA29C2EA4D04A00B9D517 /* Build configuration list for PBXNativeTarget "ReceiptTrackerTests" */;
+			buildPhases = (
+				544DA2902EA4D04A00B9D517 /* Sources */,
+				544DA2912EA4D04A00B9D517 /* Frameworks */,
+				544DA2922EA4D04A00B9D517 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				544DA2992EA4D04A00B9D517 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				544DA2952EA4D04A00B9D517 /* ReceiptTrackerTests */,
+			);
+			name = ReceiptTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = ReceiptTrackerTests;
+			productReference = 544DA2942EA4D04A00B9D517 /* ReceiptTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -189,8 +245,14 @@
 		C5379D06E0D4C8E17581F0FB /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					544DA2932EA4D04A00B9D517 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 2C5C8CF27E3E7E6CFF5A9C21;
+					};
+				};
 			};
 			buildConfigurationList = 0B20C30C48543E60B726DAD8 /* Build configuration list for PBXProject "ReceiptTracker" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -206,11 +268,19 @@
 			projectRoot = "";
 			targets = (
 				2C5C8CF27E3E7E6CFF5A9C21 /* ReceiptTracker */,
+				544DA2932EA4D04A00B9D517 /* ReceiptTrackerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		544DA2922EA4D04A00B9D517 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FFDFC1B877AE33B1F048A16 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -249,7 +319,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		544DA2902EA4D04A00B9D517 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		544DA2992EA4D04A00B9D517 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2C5C8CF27E3E7E6CFF5A9C21 /* ReceiptTracker */;
+			targetProxy = 544DA2982EA4D04A00B9D517 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		24A775EED5F1F2D3A2044A70 /* Release */ = {
@@ -314,7 +399,10 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.receipttracker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -322,6 +410,62 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		544DA29A2EA4D04A00B9D517 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.receipttracker.app.ReceiptTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReceiptTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReceiptTracker";
+			};
+			name = Debug;
+		};
+		544DA29B2EA4D04A00B9D517 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.receipttracker.app.ReceiptTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReceiptTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReceiptTracker";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		D9C1EADFAD88C850BA6B3486 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -331,7 +475,10 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.receipttracker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -414,6 +561,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		544DA29C2EA4D04A00B9D517 /* Build configuration list for PBXNativeTarget "ReceiptTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				544DA29A2EA4D04A00B9D517 /* Debug */,
+				544DA29B2EA4D04A00B9D517 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A7CDFB3E53223C8EDB453123 /* Build configuration list for PBXNativeTarget "ReceiptTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -431,6 +587,7 @@
 			children = (
 				52914A9126FE659AF1304080 /* ReceiptDataModel.xcdatamodel */,
 			);
+			currentVersion = 52914A9126FE659AF1304080 /* ReceiptDataModel.xcdatamodel */;
 			path = ReceiptDataModel.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
