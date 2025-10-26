@@ -218,30 +218,55 @@ set -e
 echo "📥 Installing git and dependencies..."
 apt-get update -qq && apt-get install -y -qq git curl ca-certificates > /dev/null 2>&1
 
-echo "🐳 Installing Docker..."
+echo "🐳 Checking Docker installation..."
 if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
     sh /tmp/get-docker.sh > /dev/null 2>&1
 fi
 docker --version
 
 echo "🚀 Starting Docker daemon..."
-# Start dockerd in background
-nohup dockerd --host=unix:///var/run/docker.sock > /var/log/dockerd.log 2>&1 &
+# Kill any existing dockerd
+pkill dockerd || true
+sleep 2
+
+# Clean up old socket
+rm -f /var/run/docker.sock
+
+# Start dockerd with explicit configuration
+dockerd \
+  --host=unix:///var/run/docker.sock \
+  --data-root=/var/lib/docker \
+  --pidfile=/var/run/docker.pid \
+  > /var/log/dockerd.log 2>&1 &
+
+DOCKERD_PID=$!
+echo "Docker daemon started with PID: $DOCKERD_PID"
 
 # Wait for docker socket to be ready
-echo "⏳ Waiting for Docker daemon..."
-for i in {{1..30}}; do
+echo "⏳ Waiting for Docker daemon (up to 2 minutes)..."
+for i in {{1..60}}; do
     if docker info > /dev/null 2>&1; then
         echo "✅ Docker daemon is ready"
         break
     fi
-    echo "   Waiting... ($i/30)"
+    if [ $i -eq 30 ]; then
+        echo "Still waiting... checking logs:"
+        tail -20 /var/log/dockerd.log
+    fi
     sleep 2
 done
 
 # Verify Docker is working
-docker info || exit 1
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker daemon failed to start. Logs:"
+    cat /var/log/dockerd.log
+    exit 1
+fi
+
+echo "✅ Docker is working!"
+docker info
 
 echo "📦 Setting up build directory..."
 cd /root
