@@ -5,6 +5,9 @@
 
 FROM vllm/vllm-openai:latest
 
+# Upgrade vLLM to nightly for DeepSeek-OCR support
+RUN pip install --no-cache-dir --upgrade vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
+
 # Install Flask for REST API
 # Use --ignore-installed to handle distutils-installed blinker
 RUN pip install --no-cache-dir --ignore-installed blinker flask pillow
