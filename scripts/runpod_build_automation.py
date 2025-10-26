@@ -222,51 +222,59 @@ echo "🐳 Checking Docker installation..."
 if ! command -v docker &> /dev/null; then
     echo "Installing Docker..."
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sh /tmp/get-docker.sh > /dev/null 2>&1
+    sh /tmp/get-docker.sh
 fi
 docker --version
 
 echo "🚀 Starting Docker daemon..."
 # Kill any existing dockerd
 pkill dockerd || true
-sleep 2
+sleep 3
 
 # Clean up old socket
 rm -f /var/run/docker.sock
+
+# Ensure necessary directories exist
+mkdir -p /var/lib/docker /var/run
 
 # Start dockerd with explicit configuration
 dockerd \
   --host=unix:///var/run/docker.sock \
   --data-root=/var/lib/docker \
   --pidfile=/var/run/docker.pid \
+  --log-level=info \
   > /var/log/dockerd.log 2>&1 &
 
 DOCKERD_PID=$!
 echo "Docker daemon started with PID: $DOCKERD_PID"
 
-# Wait for docker socket to be ready
-echo "⏳ Waiting for Docker daemon (up to 2 minutes)..."
-for i in {{1..60}}; do
+# Wait for docker socket to be ready (up to 5 minutes for first-time initialization)
+echo "⏳ Waiting for Docker daemon (up to 5 minutes)..."
+for i in {{1..150}}; do
     if docker info > /dev/null 2>&1; then
-        echo "✅ Docker daemon is ready"
+        echo "✅ Docker daemon is ready!"
         break
     fi
-    if [ $i -eq 30 ]; then
-        echo "Still waiting... checking logs:"
-        tail -20 /var/log/dockerd.log
+    
+    # Show progress every 15 seconds
+    if [ $((i % 15)) -eq 0 ]; then
+        echo "   Still waiting... ($i/150, $((i*2))s elapsed)"
+        echo "   Recent logs:"
+        tail -5 /var/log/dockerd.log
     fi
+    
     sleep 2
 done
 
 # Verify Docker is working
 if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker daemon failed to start. Logs:"
+    echo "❌ Docker daemon failed to start after 5 minutes. Full logs:"
     cat /var/log/dockerd.log
     exit 1
 fi
 
 echo "✅ Docker is working!"
-docker info
+docker version
 
 echo "📦 Setting up build directory..."
 cd /root
