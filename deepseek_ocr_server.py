@@ -34,14 +34,13 @@ try:
     if not os.path.exists(model_path):
         model_path = "deepseek-ai/DeepSeek-OCR"
     
-    # Create model instance using vLLM (much faster than transformers!)
+    # Create model instance using vLLM (official configuration)
+    # Flash Attention is automatically enabled by vLLM for supported GPUs
     llm = LLM(
         model=model_path,
         enable_prefix_caching=False,  # Not needed for OCR tasks
         mm_processor_cache_gb=0,  # Save memory
-        logits_processors=[NGramPerReqLogitsProcessor],  # Important for optimal performance
-        trust_remote_code=True,
-        gpu_memory_utilization=0.6  # Use 60% GPU memory (~12GB) for model + KV cache
+        logits_processors=[NGramPerReqLogitsProcessor],  # Important for markdown table generation
     )
     
     logging.info("✅ DeepSeek-OCR model initialized successfully with vLLM!")
