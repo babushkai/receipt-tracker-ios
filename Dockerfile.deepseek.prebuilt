@@ -1,15 +1,10 @@
 # Dockerfile for DeepSeek-OCR Server using vLLM official image
 # Build date: 2025-10-26
 
-FROM vllm/vllm-openai:latest
-
-# Clean up to make space, then install vLLM nightly for DeepSeek-OCR
-RUN pip cache purge && \
-    rm -rf /root/.cache/pip && \
-    pip install --no-cache-dir --upgrade vllm --pre --extra-index-url https://wheels.vllm.ai/nightly && \
-    pip cache purge
+FROM vllm/vllm-openai:nightly
 
 # Install Flask and dependencies
+# Use --ignore-installed to handle distutils-installed blinker
 RUN pip install --no-cache-dir --ignore-installed blinker flask pillow
 
 # Set working directory
