@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'deepseek_ocr_server.py'
-      - 'Dockerfile.deepseek*'
+      - 'Dockerfile.deepseek.runpod'
       - '.github/workflows/build-deepseek-ocr.yml'
   workflow_dispatch:
 
@@ -85,14 +85,17 @@ jobs:
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: Build and push Docker image (prebuilt base)
+    - name: Build and push Docker image (RunPod optimized - CUDA base)
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile.deepseek.prebuilt
+        file: ./Dockerfile.deepseek.runpod
         platforms: linux/amd64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:runpod
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         labels: ${{ steps.meta.outputs.labels }}
         # Disable cache to save disk space
         no-cache: true
