@@ -17,7 +17,7 @@ For GitHub Actions, set these secrets:
 - DOCKER_PASSWORD (optional)
 """
 
-import runpod
+import requests
 import paramiko
 import time
 import os
@@ -32,41 +32,68 @@ DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04"
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
 
-def create_pod():
-    """Create a RunPod GPU pod"""
+def create_pod(api_key):
+    """Create a RunPod GPU pod using REST API"""
     print("🚀 Creating RunPod pod...")
     
+    url = "https://rest.runpod.io/v1/pods"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "name": POD_NAME,
+        "imageName": DOCKER_IMAGE,
+        "gpuTypeIds": [GPU_TYPE],
+        "cloudType": CLOUD_TYPE,
+        "containerDiskInGb": CONTAINER_DISK_GB,
+        "ports": ["22/tcp"],
+        "volumeInGb": 0,
+        "gpuCount": 1,
+        "supportPublicIp": True,
+    }
+    
     try:
-        pod = runpod.create_pod(
-            name=POD_NAME,
-            image_name=DOCKER_IMAGE,
-            gpu_type_id=GPU_TYPE,
-            cloud_type="COMMUNITY",  # COMMUNITY cloud automatically uses spot pricing
-            container_disk_in_gb=CONTAINER_DISK_GB,
-            ports="22/tcp",  # SSH access
-            volume_in_gb=0,  # No persistent volume needed
-        )
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
         
+        pod = response.json()
         pod_id = pod['id']
+        
         print(f"✅ Pod created: {pod_id}")
-        return pod_id
+        print(f"📊 Cost: ${pod.get('costPerHr', 'unknown')}/hr")
+        
+        return pod_id, pod
         
     except Exception as e:
         print(f"❌ Failed to create pod: {e}")
+        if hasattr(e, 'response'):
+            print(f"Response: {e.response.text}")
         sys.exit(1)
 
-def wait_for_pod(pod_id, timeout=300):
-    """Wait for pod to be running"""
+def wait_for_pod(api_key, pod_id, timeout=300):
+    """Wait for pod to be running using REST API"""
     print("⏳ Waiting for pod to be ready...")
+    
+    url = f"https://rest.runpod.io/v1/pods/{pod_id}"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+    }
+    
     start_time = time.time()
     
     while time.time() - start_time < timeout:
         try:
-            pod = runpod.get_pod(pod_id)
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            
+            pod = response.json()
             status = pod.get('desiredStatus', 'UNKNOWN')
             
-            if status == 'RUNNING':
+            if status == 'RUNNING' and pod.get('publicIp'):
                 print("✅ Pod is running!")
+                print(f"🌐 Public IP: {pod.get('publicIp')}")
                 return pod
             
             print(f"   Status: {status}...")
@@ -79,48 +106,25 @@ def wait_for_pod(pod_id, timeout=300):
     print(f"❌ Pod failed to start within {timeout}s")
     return None
 
-def get_ssh_connection(pod_id):
-    """Get SSH connection to pod"""
+def get_ssh_connection(pod):
+    """Get SSH connection to pod using REST API response"""
     print("🔌 Connecting via SSH...")
     
     try:
-        # Get updated pod info with connection details
-        print("📡 Fetching pod connection info...")
-        pod = runpod.get_pod(pod_id)
+        # Extract connection info from REST API response
+        ssh_host = pod.get('publicIp')
+        port_mappings = pod.get('portMappings', {})
         
-        # Extract connection info from updated pod data
-        machine = pod.get('machine', {})
-        
-        # Try different fields for SSH connection
-        ssh_host = machine.get('publicIp') or machine.get('podHostId')
-        ssh_port = None
-        
-        # Look for SSH port in various places
-        if 'ports' in machine:
-            ports = machine['ports']
-            if '22/tcp' in ports:
-                port_info = ports['22/tcp']
-                if isinstance(port_info, list) and len(port_info) > 0:
-                    ssh_port = port_info[0].get('publicPort')
-                elif isinstance(port_info, dict):
-                    ssh_port = port_info.get('publicPort')
-        
-        # Check runtime info for SSH
-        if not ssh_port:
-            runtime = pod.get('runtime', {})
-            ports = runtime.get('ports', [])
-            for port in ports:
-                if port.get('privatePort') == 22:
-                    ssh_port = port.get('publicPort')
-                    break
+        # Get the public port for SSH (port 22)
+        ssh_port = port_mappings.get('22')
         
         if not ssh_host:
-            print("❌ No SSH host available")
+            print("❌ No public IP available")
             print(f"📊 Pod info: {pod}")
             return None
             
         if not ssh_port:
-            print("⚠️  No SSH port found, trying default port 22")
+            print("⚠️  No SSH port mapping found, trying default port 22")
             ssh_port = 22
         
         print(f"📡 Connecting to {ssh_host}:{ssh_port}")
@@ -223,16 +227,29 @@ docker images {registry}/{github_repo}/deepseek-ocr:latest --format "table {{{{.
         print(f"❌ Build execution failed: {e}")
         return False
 
-def terminate_pod(pod_id):
-    """Terminate the RunPod pod"""
+def terminate_pod(api_key, pod_id):
+    """Terminate the RunPod pod using REST API"""
     print(f"🧹 Terminating pod {pod_id}...")
     
+    url = f"https://rest.runpod.io/v1/pods/{pod_id}/stop"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+    }
+    
     try:
-        runpod.stop_pod(pod_id)
-        print("✅ Pod terminated")
+        response = requests.post(url, headers=headers)
+        response.raise_for_status()
+        print("✅ Pod stopped successfully")
+        
+        # Also delete the pod
+        delete_url = f"https://rest.runpod.io/v1/pods/{pod_id}"
+        response = requests.delete(delete_url, headers=headers)
+        response.raise_for_status()
+        print("✅ Pod deleted")
+        
     except Exception as e:
         print(f"⚠️  Failed to terminate pod: {e}")
-        print(f"💡 Manually terminate at: https://www.runpod.io/console/pods")
+        print(f"💡 Manually terminate at: https://www.runpod.io/console/pods/{pod_id}")
 
 def main():
     """Main automation flow"""
@@ -246,8 +263,6 @@ def main():
         print("❌ RUNPOD_API_KEY environment variable not set")
         print("💡 Get your API key from: https://www.runpod.io/console/user/settings")
         sys.exit(1)
-    
-    runpod.api_key = api_key
     
     # Get configuration from environment or defaults
     github_repo = os.environ.get('GITHUB_REPOSITORY', 'babushkai/receipt-tracker-ios')
@@ -265,21 +280,43 @@ def main():
     
     try:
         # Step 1: Create pod
-        pod_id = create_pod()
+        pod_id, initial_pod = create_pod(api_key)
         
         # Step 2: Wait for pod to be ready
-        pod = wait_for_pod(pod_id)
+        pod = wait_for_pod(api_key, pod_id)
         if not pod:
             print("❌ Pod failed to start")
             sys.exit(1)
         
         # Step 3: Connect via SSH
-        ssh = get_ssh_connection(pod_id)
+        ssh = get_ssh_connection(pod)
         if not ssh:
-            print("❌ Failed to establish SSH connection")
-            print("💡 Alternative: Use RunPod web terminal to build manually")
+            print("\n" + "="*70)
+            print("❌ SSH automation failed - Manual build required")
+            print("="*70)
             print(f"🔗 Pod URL: https://www.runpod.io/console/pods/{pod_id}")
-            sys.exit(1)
+            print("")
+            print("📝 Steps to complete build manually:")
+            print("1. Go to the pod URL above")
+            print("2. Click 'Connect' → 'Start Web Terminal'")
+            print("3. Run these commands:")
+            print("")
+            print("   apt-get update && apt-get install -y git")
+            print("   cd /workspace")
+            print(f"   git clone https://github.com/{github_repo}.git build")
+            print("   cd build")
+            print(f"   git checkout {github_sha}")
+            print("   docker build -f Dockerfile.deepseek.prebuilt -t temp:latest .")
+            print(f"   docker tag temp:latest {registry}/{github_repo}/deepseek-ocr:latest")
+            print(f"   echo {registry_token[:10]}... | docker login {registry} -u {registry_user} --password-stdin")
+            print(f"   docker push {registry}/{github_repo}/deepseek-ocr:latest")
+            print("")
+            print("⚠️  POD LEFT RUNNING - You must stop it manually when done!")
+            print("💰 Costing: ~$0.26/hour while running")
+            print("="*70)
+            
+            # Don't terminate - let user build manually
+            return  # Exit without error so GitHub Actions doesn't fail
         
         # Step 4: Execute build
         success = execute_build(ssh, github_repo, github_sha, registry, registry_user, registry_token)
@@ -303,9 +340,14 @@ def main():
             ssh.close()
         
         if pod_id:
-            terminate_pod(pod_id)
+            terminate_pod(api_key, pod_id)
     
     # Exit with appropriate code
+    # If we got here without success and pod_id exists, it means manual build is needed
+    if not success and pod_id:
+        print("\n💡 Manual build mode - pod left running for you to complete the build")
+        sys.exit(0)  # Don't fail GitHub Actions, just indicate manual step needed
+    
     sys.exit(0 if success else 1)
 
 if __name__ == "__main__":

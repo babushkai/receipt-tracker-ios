@@ -25,7 +25,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install runpod paramiko
+        pip install requests paramiko
     
     - name: Verify RunPod API Key
       run: |
