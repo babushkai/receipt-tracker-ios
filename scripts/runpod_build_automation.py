@@ -32,8 +32,8 @@ from cryptography.hazmat.backends import default_backend
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"  
 CLOUD_TYPE = "SECURE"  # SECURE cloud is more reliable for getting pods quickly
 CONTAINER_DISK_GB = 50  # Increased for Docker build
-# Use RunPod's PyTorch image - has Docker pre-installed
-DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel"
+# Try Docker-in-Docker enabled image
+DOCKER_IMAGE = "docker:dind"  # Docker-in-Docker official image
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.44  # RTX 4000 SECURE cloud cost
 
