@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+deepseek_env/
+olmocr_env/
+paddle_env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+deepseek_server.log
+easyocr.log
+
+# Test files
+test.py
+test_deepseek_image.py
+test_*.sh
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# Xcode / iOS specific
+*.xcodeproj/
+*.xcworkspace/
+Pods/
+Assets.xcassets/
+*.swift
+Info.plist
+*.plist
+
+# Other OCR servers (only build DeepSeek)
+easyocr_server.py
+olmocr_server.py
+paddle_ocr_server.py
+
+# Deployment scripts
+start_*.sh
+deploy_*.sh
+modal_*.py
+huggingface_space/
+
+# Data
+tessdata/
+Models/
+
+

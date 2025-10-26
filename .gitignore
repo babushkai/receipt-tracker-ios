@@ -95,3 +95,102 @@ iOSInjectionProject/
 # Swift Package Manager
 .swiftpm/
 
+# ===============================================
+# Security: Sensitive Files (DO NOT COMMIT!)
+# ===============================================
+
+# SSH Keys and Credentials
+*.pem
+*.key
+*.p12
+*.cer
+*.mobileprovision
+id_rsa*
+*.pub
+~/.ssh/
+.ssh/
+runpod_key*
+
+# Environment Variables & Config
+.env
+.env.*
+!.env.example
+*.local
+config.local.*
+secrets.yml
+secrets.json
+
+# API Keys & Tokens
+*apikey*
+*api_key*
+*token*
+*secret*
+!*example*
+!*template*
+!*.md
+
+# Docker Secrets
+docker-compose.override.yml
+.dockerenv
+
+# Logs with Potential Sensitive Data
+*.log
+logs/
+*.log.*
+deepseek_server.log
+easyocr.log
+
+# Python Virtual Environments
+deepseek_env/
+olmocr_env/
+paddle_env/
+venv/
+env/
+ENV/
+.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Model Cache & Large Files
+tessdata/*.traineddata
+!tessdata/eng.traineddata
+!tessdata/jpn.traineddata
+.cache/
+huggingface/
+*.safetensors
+*.bin
+*.ckpt
+
+# Test Data with Real Receipts
+test_receipts/
+private_receipts/
+*_private.*
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*~
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build Artifacts (Python)
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+

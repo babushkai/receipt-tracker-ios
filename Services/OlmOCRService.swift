@@ -13,7 +13,9 @@ import Foundation
 class OlmOCRService {
     static let shared = OlmOCRService()
     
-    private let serverURL = "http://localhost:5002"  // olmOCR on port 5002
+    private var serverURL: String {
+        return AppSettings.shared.olmocrServerURL
+    }
     
     private init() {}
     

@@ -25,7 +25,27 @@ class OCRService {
     
     // MARK: - Main OCR Processing
     func processReceipt(image: UIImage) async throws -> OCRResult {
-        // Priority 1: Try olmOCR if server is available (BEST free option!)
+        // Check if user has selected a specific OCR engine
+        if let preferredEngine = AppSettings.shared.preferredOCREngine {
+            print("🎯 Using preferred OCR engine: \(preferredEngine.displayName)")
+            return try await processWithEngine(preferredEngine, image: image)
+        }
+        
+        // Otherwise use auto-detection priority
+        print("🔄 Auto-detecting best available OCR engine...")
+        
+        // Priority 1: Try DeepSeek-OCR if available (excellent for structured documents)
+        do {
+            if let _ = try? await DeepSeekOCRService.shared.checkServerHealth() {
+                print("🚀 Using DeepSeek-OCR (state-of-the-art document understanding)")
+                print("💡 Outputs structured markdown for superior parsing")
+                return try await DeepSeekOCRService.shared.processReceipt(image: image)
+            }
+        } catch {
+            print("⚠️ DeepSeek-OCR server not available, trying alternatives...")
+        }
+        
+        // Priority 2: Try olmOCR if server is available (BEST free option!)
         do {
             if let _ = try? await OlmOCRService.shared.checkServerHealth() {
                 print("🚀 Using olmOCR-7B (state-of-the-art document OCR)")
@@ -36,13 +56,13 @@ class OCRService {
             print("⚠️ olmOCR server not available, trying alternatives...")
         }
         
-        // Priority 2: Try LLM if enabled (excellent quality, costs money)
+        // Priority 3: Try LLM if enabled (excellent quality, costs money)
         if let llmConfig = AppSettings.shared.getLLMConfig() {
             print("🤖 Using LLM-enhanced OCR (\(AppSettings.shared.llmProvider.displayName))")
             return try await processReceiptWithLLM(image: image, llmConfig: llmConfig)
         }
         
-        // Priority 3: Try EasyOCR if server is available (decent, free)
+        // Priority 4: Try EasyOCR if server is available (decent, free)
         do {
             if let _ = try? await EasyOCRService.shared.checkServerHealth() {
                 print("🎯 Using EasyOCR (fallback multilingual)")
@@ -52,9 +72,36 @@ class OCRService {
             print("⚠️ EasyOCR server not available, trying Tesseract...")
         }
         
-        // Priority 4: Fallback to Tesseract (always available)
+        // Priority 5: Fallback to Tesseract (always available)
         print("🔍 Using Tesseract OCR (final fallback)")
         return try await TesseractOCRService.shared.processReceipt(image: image)
+    }
+    
+    // MARK: - Process with Specific Engine
+    private func processWithEngine(_ engine: AppSettings.OCREngine, image: UIImage) async throws -> OCRResult {
+        switch engine {
+        case .auto:
+            // Recursive call to auto-detect
+            let savedEngine = AppSettings.shared.preferredOCREngine
+            AppSettings.shared.preferredOCREngine = nil
+            defer { AppSettings.shared.preferredOCREngine = savedEngine }
+            return try await processReceipt(image: image)
+            
+        case .deepseek:
+            return try await DeepSeekOCRService.shared.processReceipt(image: image)
+            
+        case .olmocr:
+            return try await OlmOCRService.shared.processReceipt(image: image)
+            
+        case .easyocr:
+            return try await EasyOCRService.shared.processReceipt(image: image, language: .multi)
+            
+        case .paddleocr:
+            return try await PaddleOCRService.shared.processReceipt(image: image)
+            
+        case .tesseract:
+            return try await TesseractOCRService.shared.processReceipt(image: image)
+        }
     }
     
     // MARK: - Vision Text Recognition

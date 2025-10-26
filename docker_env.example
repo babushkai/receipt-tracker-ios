@@ -1,0 +1,19 @@
+# Docker Environment Configuration Example
+# Copy this file and set your values
+
+# Docker Hub Configuration
+export DOCKER_USERNAME="your-dockerhub-username"
+export IMAGE_NAME="deepseek-ocr-server"
+export VERSION="latest"
+
+# Server Configuration
+export SERVER_PORT="5003"
+export CUDA_VISIBLE_DEVICES="0"
+
+# Usage:
+# 1. Copy this file: cp docker_env.example docker_env.sh
+# 2. Edit docker_env.sh with your values
+# 3. Source it: source docker_env.sh
+# 4. Run build script: ./build_and_push.sh
+
+

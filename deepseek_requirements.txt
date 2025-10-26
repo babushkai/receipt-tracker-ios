@@ -1,0 +1,16 @@
+# DeepSeek-OCR Server Requirements (vLLM-based)
+# Based on: https://docs.vllm.ai/projects/recipes/en/latest/DeepSeek/DeepSeek-OCR.html
+
+flask>=3.0.0
+pillow>=10.0.0
+
+# vLLM for optimized inference (requires CUDA)
+# Use nightly build until v0.11.1 release
+# Install with: uv pip install -U vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
+# Or: pip install vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
+
+# Note: vLLM requires:
+# - Python >= 3.9
+# - CUDA >= 11.8 (recommended: 12.1+)
+# - PyTorch >= 2.0.0
+# - GPU with sufficient VRAM (recommended: 24GB+ for DeepSeek-OCR)

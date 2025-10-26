@@ -1,0 +1,71 @@
+{
+  "template": {
+    "name": "DeepSeek-OCR vLLM Server",
+    "description": "DeepSeek-OCR with vLLM for optimized receipt OCR processing. Outputs structured markdown for easy parsing.",
+    "docker_image": "your-dockerhub-username/deepseek-ocr-server:latest",
+    "container_disk_gb": 20,
+    "ports": "5003/http",
+    "env_vars": {
+      "CUDA_VISIBLE_DEVICES": "0",
+      "PYTHONUNBUFFERED": "1"
+    },
+    "volume_mounts": [],
+    "notes": [
+      "First run downloads ~8GB model (5-10 minutes)",
+      "Requires GPU with 24GB+ VRAM",
+      "Supports efficient batch processing",
+      "Recommended GPUs: RTX 4090, A5000, A6000"
+    ]
+  },
+  "deployment": {
+    "gpu_type_ids": [
+      "NVIDIA RTX 4090",
+      "NVIDIA RTX A5000", 
+      "NVIDIA RTX A6000",
+      "NVIDIA A100 40GB",
+      "NVIDIA A100 80GB"
+    ],
+    "min_vram_gb": 24,
+    "min_disk_gb": 20,
+    "recommended_instance_type": "spot"
+  },
+  "endpoints": {
+    "health": {
+      "method": "GET",
+      "path": "/health",
+      "description": "Check server status and model loading"
+    },
+    "ocr": {
+      "method": "POST",
+      "path": "/ocr",
+      "description": "Process single receipt image",
+      "body": {
+        "image": "base64_encoded_image_string",
+        "prompt": "Free OCR. (optional)"
+      }
+    },
+    "batch_ocr": {
+      "method": "POST", 
+      "path": "/ocr/batch",
+      "description": "Process multiple receipt images in batch (recommended)",
+      "body": {
+        "images": ["base64_1", "base64_2", "..."],
+        "prompt": "Free OCR. (optional)"
+      }
+    }
+  },
+  "cost_estimate": {
+    "rtx_4090": {
+      "on_demand_hourly": 0.44,
+      "spot_hourly": 0.25,
+      "per_100_receipts": 0.50
+    },
+    "a5000": {
+      "on_demand_hourly": 0.34,
+      "spot_hourly": 0.19,
+      "per_100_receipts": 0.38
+    }
+  }
+}
+
+

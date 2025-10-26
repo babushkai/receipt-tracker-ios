@@ -1,0 +1,26 @@
+# Dockerfile for DeepSeek-OCR Server using pre-built vLLM image
+# This is MUCH simpler and faster than building vLLM from scratch!
+# Use this if you want to build quickly on RunPod
+
+FROM vllm/vllm-openai:latest
+
+# Install Flask for REST API
+RUN pip install --no-cache-dir flask pillow
+
+# Set working directory
+WORKDIR /app
+
+# Copy server code
+COPY deepseek_ocr_server.py /app/
+
+# Expose port
+EXPOSE 5003
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5003/health || exit 1
+
+# Run server
+CMD ["python", "deepseek_ocr_server.py"]
+
+

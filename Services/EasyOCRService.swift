@@ -12,7 +12,9 @@ import Foundation
 class EasyOCRService {
     static let shared = EasyOCRService()
 
-    private let serverURL = "http://localhost:5001"  // Port 5001 (5000 is used by macOS AirPlay)
+    private var serverURL: String {
+        return AppSettings.shared.easyocrServerURL
+    }
 
     private init() {}
 

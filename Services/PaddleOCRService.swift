@@ -11,7 +11,9 @@ import Foundation
 class PaddleOCRService {
     static let shared = PaddleOCRService()
     
-    private let serverURL = "http://localhost:5000"
+    private var serverURL: String {
+        return AppSettings.shared.paddleocrServerURL
+    }
     
     private init() {}
     
