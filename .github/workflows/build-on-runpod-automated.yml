@@ -26,6 +26,26 @@ jobs:
       run: |
         pip install runpod paramiko
     
+    - name: Verify RunPod API Key
+      run: |
+        if [ -z "${{ secrets.RUNPOD_API_KEY }}" ]; then
+          echo "❌ RUNPOD_API_KEY secret is not set!"
+          echo ""
+          echo "📝 To fix:"
+          echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          echo "2. Click 'New repository secret'"
+          echo "3. Name: RUNPOD_API_KEY"
+          echo "4. Value: Your RunPod API key from https://www.runpod.io/console/user/settings"
+          echo "5. Click 'Add secret'"
+          exit 1
+        else
+          echo "✅ RUNPOD_API_KEY is set"
+          echo "🔑 Key length: ${#RUNPOD_API_KEY} characters"
+          echo "🔑 Key prefix: ${RUNPOD_API_KEY:0:8}..."
+        fi
+      env:
+        RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+    
     - name: Build on RunPod
       env:
         RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
