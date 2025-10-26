@@ -3,8 +3,13 @@
 
 FROM vllm/vllm-openai:latest
 
+# Clean up to make space, then install vLLM nightly for DeepSeek-OCR
+RUN pip cache purge && \
+    rm -rf /root/.cache/pip && \
+    pip install --no-cache-dir --upgrade vllm --pre --extra-index-url https://wheels.vllm.ai/nightly && \
+    pip cache purge
+
 # Install Flask and dependencies
-# Use --ignore-installed to handle distutils-installed blinker
 RUN pip install --no-cache-dir --ignore-installed blinker flask pillow
 
 # Set working directory
