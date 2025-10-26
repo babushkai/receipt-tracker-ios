@@ -14,9 +14,61 @@ import logging
 import os
 import requests
 from urllib.parse import urlparse
+import json
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
+
+# JSON Schema for structured receipt output
+RECEIPT_JSON_SCHEMA = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "address": {"type": "string"},
+            "city": {"type": "string"},
+            "email": {"type": "string"},
+            "invoice": {
+                "type": "object",
+                "properties": {
+                    "number": {"type": "string"},
+                    "date": {"type": "string"},
+                    "time": {"type": "string"},
+                    "table": {"type": "string"}
+                }
+            },
+            "item": {"type": "string"},
+            "quantity": {"type": "integer"},
+            "unit_price": {"type": "string"},
+            "total_price": {"type": "string"},
+            "summary": {
+                "type": "object",
+                "properties": {
+                    "total": {"type": "string"},
+                    "tax_included": {"type": "string"}
+                }
+            },
+            "server": {"type": "string"},
+            "contact": {
+                "type": "object",
+                "properties": {
+                    "mwst_number": {"type": "string"},
+                    "phone": {"type": "string"},
+                    "fax": {"type": "string"},
+                    "email": {"type": "string"}
+                }
+            },
+            "conversion": {
+                "type": "object",
+                "properties": {
+                    "currency": {"type": "string"},
+                    "amount": {"type": "string"}
+                }
+            }
+        }
+    }
+}
 
 # Initialize DeepSeek-OCR with vLLM
 logging.info("🔧 Initializing DeepSeek-OCR model with vLLM...")
@@ -126,51 +178,26 @@ def perform_ocr():
         # Load image from URL or base64
         image = load_image(data['image'])
         
-        # Get custom prompt or use default structured receipt extraction
-        custom_prompt = data.get('prompt', '''Extract all information from this receipt and return it as a JSON array with the following structure:
-[
-  {
-    "name": "merchant name",
-    "address": "street address",
-    "city": "city with postal code",
-    "email": "email if available"
-  },
-  {
-    "invoice": {
-      "number": "invoice number",
-      "date": "DD.MM.YYYY",
-      "time": "HH:MM:SS",
-      "table": "table number if available"
-    }
-  },
-  {
-    "item": "item name",
-    "quantity": number,
-    "unit_price": "price with currency",
-    "total_price": "total with currency"
-  },
-  // ... more items
-  {
-    "summary": {
-      "total": "total with currency",
-      "tax_included": "tax info"
-    }
-  },
-  {
-    "server": "server name if available"
-  },
-  {
-    "contact": {
-      "phone": "phone number",
-      "fax": "fax number",
-      "email": "email"
-    }
-  }
-]
-Extract ALL items, prices, and information visible on the receipt.''')
-        prompt = f"<image>\n{custom_prompt}"
+        # Get custom prompt or use default
+        custom_text = data.get('prompt', 'Extract all text and information from this receipt.')
         
-        logging.info(f"Processing image with vLLM...")
+        # Remove any existing <image> tokens from custom text to avoid duplicates
+        custom_text = custom_text.replace('<image>', '').strip()
+        
+        # Build prompt: exactly ONE <image> token followed by the instruction
+        prompt = f"<image>\n{custom_text}"
+        
+        # Validate prompt format
+        image_token_count = prompt.count('<image>')
+        if image_token_count != 1:
+            logging.error(f"Invalid prompt: found {image_token_count} <image> tokens, expected 1")
+            logging.error(f"Prompt: {repr(prompt)}")
+            return jsonify({
+                'success': False,
+                'error': f'Invalid prompt format: found {image_token_count} <image> tokens, expected 1'
+            }), 400
+        
+        logging.info(f"Processing image with vLLM (guided JSON)...")
         logging.info(f"Prompt: {prompt}")
         
         # Prepare input for vLLM
@@ -179,10 +206,11 @@ Extract ALL items, prices, and information visible on the receipt.''')
             "multi_modal_data": {"image": image}
         }]
         
-        # Configure sampling parameters with ngram logit processor
+        # Configure sampling parameters with guided JSON output
         sampling_params = SamplingParams(
             temperature=0.0,  # Deterministic for OCR
             max_tokens=8192,  # Allow long outputs for documents
+            guided_json=RECEIPT_JSON_SCHEMA,  # Force valid JSON output
             # ngram logit processor args (improves markdown table generation)
             extra_args=dict(
                 ngram_size=30,
@@ -195,7 +223,7 @@ Extract ALL items, prices, and information visible on the receipt.''')
         # Generate output using vLLM
         model_outputs = llm.generate(model_input, sampling_params)
         
-        # Extract the generated text
+        # Extract the generated text (should be valid JSON due to guided_json)
         result = model_outputs[0].outputs[0].text
         
         if not result:
@@ -206,41 +234,29 @@ Extract ALL items, prices, and information visible on the receipt.''')
         
         logging.info(f"✅ Extracted {len(result)} characters")
         
-        # Try to parse as JSON
-        import json
-        import re
-        
-        structured_data = None
+        # Parse JSON (guided_json ensures valid JSON output)
         try:
-            # Remove markdown code blocks if present
-            json_text = result
-            if '```json' in json_text:
-                json_text = re.search(r'```json\s*\n(.*?)\n```', json_text, re.DOTALL).group(1)
-            elif '```' in json_text:
-                json_text = re.search(r'```\s*\n(.*?)\n```', json_text, re.DOTALL).group(1)
-            
-            # Parse JSON
-            structured_data = json.loads(json_text)
+            structured_data = json.loads(result)
             logging.info("✅ Successfully parsed structured JSON data")
-        except Exception as e:
-            logging.warning(f"Could not parse as JSON: {e}")
-            # Fall back to returning raw text
-            structured_data = None
-        
-        response = {
-            'success': True,
-            'engine': 'vLLM',
-            'model': 'deepseek-ai/DeepSeek-OCR'
-        }
-        
-        # Return structured data if available, otherwise raw text
-        if structured_data:
-            response['structured_data'] = structured_data
-            response['raw_text'] = result  # Keep raw text for reference
-        else:
-            response['text'] = result
-        
-        return jsonify(response)
+            
+            return jsonify({
+                'success': True,
+                'engine': 'vLLM',
+                'model': 'deepseek-ai/DeepSeek-OCR',
+                'structured_data': structured_data,
+                'raw_text': result  # Keep raw JSON string for reference
+            })
+            
+        except json.JSONDecodeError as e:
+            logging.error(f"JSON parsing failed (should not happen with guided_json): {e}")
+            # Fallback if guided_json somehow fails
+            return jsonify({
+                'success': True,
+                'engine': 'vLLM',
+                'model': 'deepseek-ai/DeepSeek-OCR',
+                'text': result,
+                'warning': 'JSON parsing failed'
+            })
         
     except Exception as e:
         logging.error(f"OCR error: {str(e)}")
@@ -303,7 +319,12 @@ def perform_batch_ocr():
                 }), 400
         
         # Prepare batched input for vLLM (vLLM handles batching efficiently!)
+        # Remove any existing <image> tokens to avoid duplicates
+        custom_prompt = custom_prompt.replace('<image>', '').strip()
         prompt = f"<image>\n{custom_prompt}"
+        
+        logging.info(f"Batch prompt: {prompt}")
+        
         model_inputs = [
             {
                 "prompt": prompt,
@@ -312,10 +333,11 @@ def perform_batch_ocr():
             for img in images
         ]
         
-        # Configure sampling parameters
+        # Configure sampling parameters with guided JSON
         sampling_params = SamplingParams(
             temperature=0.0,
             max_tokens=8192,
+            guided_json=RECEIPT_JSON_SCHEMA,  # Force valid JSON output
             extra_args=dict(
                 ngram_size=30,
                 window_size=90,
@@ -327,16 +349,27 @@ def perform_batch_ocr():
         # Generate outputs in batch (vLLM is optimized for this!)
         model_outputs = llm.generate(model_inputs, sampling_params)
         
-        # Extract results
+        # Extract results and parse JSON
         results = []
         for idx, output in enumerate(model_outputs):
             text = output.outputs[0].text
-            results.append({
-                'success': True,
-                'text': text,
-                'length': len(text)
-            })
-            logging.info(f"Image {idx + 1}/{len(images)}: Extracted {len(text)} characters")
+            
+            # Parse JSON (guided_json ensures valid JSON)
+            try:
+                structured_data = json.loads(text)
+                results.append({
+                    'success': True,
+                    'structured_data': structured_data,
+                    'raw_text': text
+                })
+                logging.info(f"Image {idx + 1}/{len(images)}: ✅ Parsed JSON ({len(text)} chars)")
+            except json.JSONDecodeError as e:
+                logging.warning(f"Image {idx + 1}/{len(images)}: JSON parse failed: {e}")
+                results.append({
+                    'success': True,
+                    'text': text,
+                    'warning': 'JSON parsing failed'
+                })
         
         successful = sum(1 for r in results if r.get('success', False))
         
