@@ -123,91 +123,115 @@ class DeepSeekOCRService {
     }
     
     func extractText(from image: UIImage) async throws -> String {
-        print("\n🎯 ========== DEEPSEEK-OCR EXTRACTION STARTED ==========")
-        print("📸 Original image size: \(image.size.width) x \(image.size.height)")
-        print("🧠 Using state-of-the-art DeepSeek-OCR model")
-        
-        // Preprocess image for better OCR quality
-        let preprocessedImage = preprocessImage(image)
-        print("✨ Image preprocessed for better quality")
-        
-        // Convert image to base64 with high quality
-        guard let imageData = preprocessedImage.jpegData(compressionQuality: 0.95) else {
-            print("❌ Failed to convert image to JPEG")
-            throw DeepSeekOCRError.invalidImage
-        }
-        let base64Image = imageData.base64EncodedString()
-        print("📦 Image data size: \(imageData.count / 1024)KB")
-        
-        // Create request
-        guard let url = URL(string: "\(serverURL)/ocr") else {
-            throw DeepSeekOCRError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60 // 60 second timeout for model inference
-        
-        let requestBody: [String: String] = [
-            "image": base64Image
-        ]
-        
-        request.httpBody = try JSONEncoder().encode(requestBody)
-        
-        // Send request
-        print("📤 Sending request to DeepSeek-OCR server...")
-        let startTime = Date()
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let processingTime = Date().timeIntervalSince(startTime)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DeepSeekOCRError.invalidResponse
-        }
-        
-        print("📥 Received response with status code: \(httpResponse.statusCode)")
-        print("⏱️  Processing time: \(String(format: "%.2f", processingTime))s")
-        
-        guard httpResponse.statusCode == 200 else {
-            throw DeepSeekOCRError.serverError(statusCode: httpResponse.statusCode)
-        }
-        
-        // Parse response
-        let ocrResponse = try JSONDecoder().decode(DeepSeekOCRResponse.self, from: data)
-        
-        guard ocrResponse.success else {
-            throw DeepSeekOCRError.extractionFailed("OCR extraction failed")
-        }
-        
-        // Use raw_text if available, otherwise text
-        let text = ocrResponse.raw_text ?? ocrResponse.text ?? ""
-        
-        print("\n✅ ========== EXTRACTION SUCCESSFUL ==========")
-        print("📝 Extracted Text Length: \(text.count) characters")
-        print("🤖 Model: \(ocrResponse.model ?? "unknown")")
-        print("🚀 Engine: \(ocrResponse.engine ?? "unknown")")
-        print("⏱️  Server processing: \(String(format: "%.2f", ocrResponse.processing_time ?? 0))s")
-        
-        if let structuredData = ocrResponse.structured_data {
-            print("📊 Structured Data: \(structuredData.count) sections")
-        }
-        
-        print("📄 RAW EXTRACTED TEXT:")
-        print("-------------------------------------------")
-        print(text)
-        print("-------------------------------------------")
-        print("✅ ========== END OF EXTRACTION ==========\n")
-        
-        return text
+        let ocrResponse = try await extractOCRResponse(from: image)
+        return ocrResponse.raw_text ?? ocrResponse.text ?? ""
     }
     
     // MARK: - Full Receipt Processing
     func processReceipt(image: UIImage) async throws -> OCRResult {
-        // Extract text using DeepSeek-OCR
-        let extractedText = try await extractText(from: image)
+        // Extract structured data and text using DeepSeek-OCR
+        let ocrResponse = try await extractOCRResponse(from: image)
+        let extractedText = ocrResponse.raw_text ?? ocrResponse.text ?? ""
         
-        // Use existing parsing logic
+        // If we have structured data, use it directly
+        if let structuredData = ocrResponse.structured_data {
+            return parseStructuredData(structuredData, rawText: extractedText)
+        }
+        
+        // Fall back to text parsing if no structured data
         return parseReceiptText(extractedText, rawText: extractedText)
+    }
+    
+    // MARK: - Structured Data Parsing
+    private func parseStructuredData(_ structuredData: [StructuredReceiptData], rawText: String) -> OCRResult {
+        print("\n🔧 ========== PARSING STRUCTURED DATA ==========")
+        
+        var merchantName: String?
+        var date: Date?
+        var totalAmount: Double?
+        var items: [ReceiptItemData] = []
+        
+        // Extract merchant info
+        for entry in structuredData {
+            if let name = entry.name {
+                merchantName = [name, entry.address, entry.city]
+                    .compactMap { $0 }
+                    .joined(separator: " ")
+                break
+            }
+        }
+        
+        // Extract date from invoice info
+        for entry in structuredData {
+            if let invoice = entry.invoice, let dateStr = invoice.date {
+                date = parseDate(from: dateStr)
+                break
+            }
+        }
+        
+        // Extract items
+        for entry in structuredData {
+            if let itemName = entry.item, let totalPriceStr = entry.total_price {
+                let quantity = entry.quantity ?? 1
+                // Extract numeric value from price string (e.g., "54.50 CHF" -> 54.50)
+                if let price = extractPrice(from: totalPriceStr) {
+                    items.append(ReceiptItemData(name: itemName, price: price, quantity: quantity))
+                }
+            }
+        }
+        
+        // Extract total from summary
+        for entry in structuredData {
+            if let summary = entry.summary, let totalStr = summary.total {
+                totalAmount = extractPrice(from: totalStr)
+                break
+            }
+        }
+        
+        print("🏪 Merchant: \(merchantName ?? "NOT FOUND")")
+        print("📅 Date: \(date?.description ?? "NOT FOUND")")
+        print("💵 Total: \(totalAmount != nil ? String(format: "%.2f", totalAmount!) : "NOT FOUND")")
+        print("📦 Items: \(items.count)")
+        
+        print("✅ ========== STRUCTURED PARSING COMPLETE ==========\n")
+        
+        return OCRResult(
+            merchantName: merchantName,
+            date: date,
+            totalAmount: totalAmount,
+            items: items,
+            rawText: rawText,
+            structuredData: structuredData
+        )
+    }
+    
+    private func parseDate(from dateStr: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        // Try common formats
+        let formats = ["dd.MM.yyyy", "dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy"]
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: dateStr) {
+                return date
+            }
+        }
+        return nil
+    }
+    
+    private func extractPrice(from priceStr: String) -> Double? {
+        // Extract number from string like "54.50 CHF" or "€10.50"
+        let pattern = #"(\d{1,}(?:[,\.]\d{2}))"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: priceStr, range: NSRange(priceStr.startIndex..., in: priceStr)),
+           let range = Range(match.range(at: 1), in: priceStr) {
+            var numStr = String(priceStr[range])
+                .replacingOccurrences(of: ",", with: ".")
+                .replacingOccurrences(of: " ", with: "")
+            return Double(numStr)
+        }
+        return nil
     }
     
     // MARK: - Text Parsing
@@ -262,6 +286,7 @@ class DeepSeekOCRService {
             totalAmount: totalAmount,
             items: items,
             rawText: rawText,
+            structuredData: nil
         )
     }
     
