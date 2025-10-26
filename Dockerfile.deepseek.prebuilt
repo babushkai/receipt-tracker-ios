@@ -1,27 +1,11 @@
-# Dockerfile for DeepSeek-OCR Server with vLLM nightly
-# Uses CUDA base and installs vLLM nightly for DeepSeek-OCR support
+# Dockerfile for DeepSeek-OCR Server using vLLM official image
+# Build date: 2025-10-26
 
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
-
-# Prevent interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install Python and essential tools
-RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3-pip \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Upgrade pip
-RUN pip3 install --no-cache-dir --upgrade pip
-
-# Install vLLM nightly with DeepSeek-OCR support
-RUN pip3 install --no-cache-dir vllm --pre --extra-index-url https://wheels.vllm.ai/nightly
+FROM vllm/vllm-openai:latest
 
 # Install Flask and dependencies
-RUN pip3 install --no-cache-dir flask pillow
+# Use --ignore-installed to handle distutils-installed blinker
+RUN pip install --no-cache-dir --ignore-installed blinker flask pillow
 
 # Set working directory
 WORKDIR /app
@@ -36,7 +20,8 @@ EXPOSE 5003
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5003/health || exit 1
 
-# Run server
+# Override vLLM's default ENTRYPOINT to run our Flask server
+ENTRYPOINT []
 CMD ["python3", "/app/deepseek_ocr_server.py"]
 
 
