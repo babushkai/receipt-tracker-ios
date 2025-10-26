@@ -221,11 +221,26 @@ echo "🐳 Installing Docker..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
     sh /tmp/get-docker.sh > /dev/null 2>&1
-    echo "Starting Docker daemon..."
-    dockerd > /var/log/dockerd.log 2>&1 &
-    sleep 10
 fi
 docker --version
+
+echo "🚀 Starting Docker daemon..."
+# Start dockerd in background
+nohup dockerd --host=unix:///var/run/docker.sock > /var/log/dockerd.log 2>&1 &
+
+# Wait for docker socket to be ready
+echo "⏳ Waiting for Docker daemon..."
+for i in {{1..30}}; do
+    if docker info > /dev/null 2>&1; then
+        echo "✅ Docker daemon is ready"
+        break
+    fi
+    echo "   Waiting... ($i/30)"
+    sleep 2
+done
+
+# Verify Docker is working
+docker info || exit 1
 
 echo "📦 Setting up build directory..."
 cd /root
