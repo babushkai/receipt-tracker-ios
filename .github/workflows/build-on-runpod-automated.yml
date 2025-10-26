@@ -1,0 +1,56 @@
+name: Build on RunPod (Automated)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'deepseek_ocr_server.py'
+      - 'Dockerfile.deepseek*'
+      - '.github/workflows/build-on-runpod-automated.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install runpod paramiko
+    
+    - name: Build on RunPod
+      env:
+        RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REGISTRY: ghcr.io
+        REGISTRY_USER: ${{ github.actor }}
+        REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python3 scripts/runpod_build_automation.py
+    
+    - name: Build Summary
+      if: success()
+      run: |
+        echo "✅ Docker image built and pushed successfully!"
+        echo "📦 Image: ghcr.io/${{ github.repository }}/deepseek-ocr:latest"
+        echo "🏷️  Tag: ghcr.io/${{ github.repository }}/deepseek-ocr:${{ github.sha }}"
+        echo "💰 Cost: ~$0.01 (3-5 minutes on RunPod spot)"
+    
+    - name: Failure Summary
+      if: failure()
+      run: |
+        echo "❌ Build failed"
+        echo "🔍 Check logs above for details"
+        echo "💡 Verify RUNPOD_API_KEY secret is set"
+
