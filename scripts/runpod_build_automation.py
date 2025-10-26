@@ -32,7 +32,10 @@ from cryptography.hazmat.backends import default_backend
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
 CLOUD_TYPE = "COMMUNITY"  # COMMUNITY cloud automatically uses spot pricing
 CONTAINER_DISK_GB = 30
-DOCKER_IMAGE = "runpod/base:0.4.0-cuda11.8.0"
+# Use RunPod template ID (pre-cached, starts in ~30s instead of 5+ minutes)
+# runpod/pytorch template with Docker support
+TEMPLATE_ID = "runpod-torch-v2-1-0"  # PyTorch 2.1.0 with CUDA, much faster startup
+DOCKER_IMAGE = None  # Use template instead
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
 
@@ -76,7 +79,7 @@ def create_pod(api_key, ssh_public_key):
     # Add SSH public key to environment variables
     payload = {
         "name": POD_NAME,
-        "imageName": DOCKER_IMAGE,
+        "templateId": TEMPLATE_ID,  # Use template for faster startup
         "gpuTypeIds": [GPU_TYPE],
         "cloudType": CLOUD_TYPE,
         "containerDiskInGb": CONTAINER_DISK_GB,
@@ -108,7 +111,7 @@ def create_pod(api_key, ssh_public_key):
             print(f"Response: {e.response.text}")
         sys.exit(1)
 
-def wait_for_pod(api_key, pod_id, timeout=300):
+def wait_for_pod(api_key, pod_id, timeout=900):
     """Wait for pod to be running using REST API"""
     print("⏳ Waiting for pod to be ready...")
     
