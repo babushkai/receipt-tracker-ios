@@ -32,8 +32,8 @@ from cryptography.hazmat.backends import default_backend
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
 CLOUD_TYPE = "COMMUNITY"  # COMMUNITY cloud automatically uses spot pricing
 CONTAINER_DISK_GB = 50  # Increased for Docker build
-# Use ubuntu with Docker pre-installed - much lighter than PyTorch
-DOCKER_IMAGE = "ubuntu:22.04"  # Minimal base, we'll install Docker ourselves
+# Use RunPod's base image which includes SSH server + start.sh
+DOCKER_IMAGE = "runpod/base:0.4.0"  # Has SSH server pre-configured
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
 
