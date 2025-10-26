@@ -13,12 +13,10 @@
 		2CBEC7D1C2EA41AA39D94E97 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA90A465883501B80C0035E /* DashboardViewModel.swift */; };
 		38178466DE16784D154CFE42 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 995703E9BA53A0707C51987F /* ImagePicker.swift */; };
 		38341859C289DE74B5BBEFA1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 77DC41204DCD1C9F367C7CE7 /* Assets.xcassets */; };
-		39F4B1C84BD033B9F855522A /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88F0A2F39333949A0B4F36FE /* LLMService.swift */; };
 		3F0BD085158A40A547FD25D6 /* ReceiptTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C3EB74E0C995902C47617C1 /* ReceiptTrackerApp.swift */; };
 		43C25E5499DED921B8C2AB37 /* InsightsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C57DA8E3CCE6B6A69B1311C /* InsightsViewModel.swift */; };
 		48BFBC59AE0C0BBB43499981 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87E12148095C082512B5C4DC /* DashboardView.swift */; };
-		544DA3032EA51F8200B9D517 /* SwiftyTesseract in Frameworks */ = {isa = PBXBuildFile; productRef = 544DA2DA2EA519BD00B9D517 /* SwiftyTesseract */; };
-		544DA32B2EA5308900B9D517 /* EasyOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544DA32A2EA5308900B9D517 /* EasyOCRService.swift */; };
+		5478AA8F2EAE853D0085F22A /* DeepSeekOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5478AA8E2EAE853D0085F22A /* DeepSeekOCRService.swift */; };
 		56207521095DE7AF1899DB30 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC847884D193CB94CAE9D89 /* ContentView.swift */; };
 		572FADD0E2FB63F011399D7E /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB23C201883A6958EE4394EB /* AnalyticsService.swift */; };
 		679C50437E7392E6053520DA /* AddReceiptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB3C9EA3932CCBF32A57C25 /* AddReceiptViewModel.swift */; };
@@ -39,8 +37,6 @@
 		DCB324EF8EF623CE081D7196 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E670FF36F213F716C226D0 /* InsightsView.swift */; };
 		DD9999999999999999999999 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7777777777777777777777 /* AppSettings.swift */; };
 		E59B39C4FD2528528700D542 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C85706A856B0EF91C498A2B /* SwiftUI.framework */; };
-		EEAAAAAAAAAAAAAAAAAAAAAA /* TesseractOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9999999999999999999999 /* TesseractOCRService.swift */; };
-		FFBBBBBBBBBBBBBBBBBBBBBB /* OlmOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFAAAAAAAAAAAAAAAAAAAA /* OlmOCRService.swift */; };
 		F546474D997FE3905FE5C4DE /* ReceiptsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77CEB9117BA8422D419699D /* ReceiptsListView.swift */; };
 /* End PBXBuildFile section */
 
@@ -68,13 +64,12 @@
 		544DA28F2EA4CF9800B9D517 /* ReceiptTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReceiptTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		544DA2942EA4D04A00B9D517 /* ReceiptTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReceiptTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		544DA2D82EA51A1300B9D517 /* tessdata.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tessdata.txt; sourceTree = "<group>"; };
-		544DA32A2EA5308900B9D517 /* EasyOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyOCRService.swift; sourceTree = "<group>"; };
+		5478AA8E2EAE853D0085F22A /* DeepSeekOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekOCRService.swift; sourceTree = "<group>"; };
 		5C3EB74E0C995902C47617C1 /* ReceiptTrackerApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptTrackerApp.swift; sourceTree = "<group>"; };
 		6ABB21D37AD3A80211E58E32 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		7485607AFCE69363802E812D /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Vision.framework; sourceTree = DEVELOPER_DIR; };
 		77DC41204DCD1C9F367C7CE7 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		87E12148095C082512B5C4DC /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		88F0A2F39333949A0B4F36FE /* LLMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
 		995703E9BA53A0707C51987F /* ImagePicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		9C57DA8E3CCE6B6A69B1311C /* InsightsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsViewModel.swift; sourceTree = "<group>"; };
 		9C85706A856B0EF91C498A2B /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
@@ -90,9 +85,7 @@
 		CB23C201883A6958EE4394EB /* AnalyticsService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		DD7777777777777777777777 /* AppSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		E804601A344047FB1EF505D4 /* ReceiptDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReceiptDetailView.swift; sourceTree = "<group>"; };
-		EE9999999999999999999999 /* TesseractOCRService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TesseractOCRService.swift; sourceTree = "<group>"; };
 		EF25F5CD6C47F7A56F922C51 /* OCRService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
-		FFAAAAAAAAAAAAAAAAAAAA /* OlmOCRService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OlmOCRService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -112,7 +105,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				544DA3032EA51F8200B9D517 /* SwiftyTesseract in Frameworks */,
 				7F29D420C7E19286489406E1 /* Foundation.framework in Frameworks */,
 				2993C2D87C2CC5B19ACA33FE /* UIKit.framework in Frameworks */,
 				E59B39C4FD2528528700D542 /* SwiftUI.framework in Frameworks */,
@@ -191,13 +183,10 @@
 		E5FAB525EA1906591782EACC /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				544DA32A2EA5308900B9D517 /* EasyOCRService.swift */,
+				5478AA8E2EAE853D0085F22A /* DeepSeekOCRService.swift */,
 				B887C076AE5769232FB38B65 /* PersistenceController.swift */,
 				EF25F5CD6C47F7A56F922C51 /* OCRService.swift */,
-				EE9999999999999999999999 /* TesseractOCRService.swift */,
-				FFAAAAAAAAAAAAAAAAAAAA /* OlmOCRService.swift */,
 				CB23C201883A6958EE4394EB /* AnalyticsService.swift */,
-				88F0A2F39333949A0B4F36FE /* LLMService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -247,7 +236,6 @@
 			);
 			name = ReceiptTracker;
 			packageProductDependencies = (
-				544DA2DA2EA519BD00B9D517 /* SwiftyTesseract */,
 			);
 			productName = ReceiptTracker;
 			productReference = 544DA28F2EA4CF9800B9D517 /* ReceiptTracker.app */;
@@ -301,7 +289,6 @@
 			);
 			mainGroup = 689E263DFBFA870070AE8763;
 			packageReferences = (
-				544DA2D72EA519BD00B9D517 /* XCRemoteSwiftPackageReference "SwiftyTesseract" */,
 			);
 			productRefGroup = 3E1469B11A309F6EC68490D9 /* Products */;
 			projectDirPath = "";
@@ -358,12 +345,12 @@
 				8353BCA2A07286117799493A /* Receipt.swift in Sources */,
 				56207521095DE7AF1899DB30 /* ContentView.swift in Sources */,
 				48BFBC59AE0C0BBB43499981 /* DashboardView.swift in Sources */,
-				544DA32B2EA5308900B9D517 /* EasyOCRService.swift in Sources */,
 				BE5FC06A50963D694A6114EF /* AddReceiptView.swift in Sources */,
 				F546474D997FE3905FE5C4DE /* ReceiptsListView.swift in Sources */,
 				B18CBC368642FB5F16333187 /* ReceiptDetailView.swift in Sources */,
 				DCB324EF8EF623CE081D7196 /* InsightsView.swift in Sources */,
 				7599F58E8A81EC3B02658C0D /* SettingsView.swift in Sources */,
+				5478AA8F2EAE853D0085F22A /* DeepSeekOCRService.swift in Sources */,
 				2CBEC7D1C2EA41AA39D94E97 /* DashboardViewModel.swift in Sources */,
 				679C50437E7392E6053520DA /* AddReceiptViewModel.swift in Sources */,
 				8F387B801773AAEF029D1B4B /* ReceiptsListViewModel.swift in Sources */,
@@ -371,14 +358,11 @@
 				9D917174EAFED60272DA795E /* PersistenceController.swift in Sources */,
 				1535659F88D81917D6AB185B /* OCRService.swift in Sources */,
 				572FADD0E2FB63F011399D7E /* AnalyticsService.swift in Sources */,
-				39F4B1C84BD033B9F855522A /* LLMService.swift in Sources */,
 				38178466DE16784D154CFE42 /* ImagePicker.swift in Sources */,
 				AA3333333333333333333333 /* MultiImagePicker.swift in Sources */,
 				AA4444444444444444444444 /* SampleReceiptsProvider.swift in Sources */,
 				7C572AE891E9E976324FA287 /* HapticFeedback.swift in Sources */,
 				DD9999999999999999999999 /* AppSettings.swift in Sources */,
-				EEAAAAAAAAAAAAAAAAAAAAAA /* TesseractOCRService.swift in Sources */,
-				FFBBBBBBBBBBBBBBBBBBBBBB /* OlmOCRService.swift in Sources */,
 				AA1111111111111111111111 /* BulkUploadView.swift in Sources */,
 				AA2222222222222222222222 /* BulkUploadViewModel.swift in Sources */,
 			);

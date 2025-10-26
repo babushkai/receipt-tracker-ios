@@ -12,10 +12,7 @@ import Foundation
 
 class OlmOCRService {
     static let shared = OlmOCRService()
-    
-    private var serverURL: String {
-        return AppSettings.shared.olmocrServerURL
-    }
+
     
     private init() {}
     
@@ -175,7 +172,6 @@ class OlmOCRService {
             totalAmount: totalAmount,
             items: items,
             rawText: rawText,
-            confidence: 0.95 // olmOCR is highly confident
         )
     }
     

@@ -127,8 +127,48 @@ def perform_ocr():
         # Load image from URL or base64
         image = load_image(data['image'])
         
-        # Get custom prompt or use default
-        custom_prompt = data.get('prompt', 'Free OCR.')
+        # Get custom prompt or use default structured receipt extraction
+        custom_prompt = data.get('prompt', '''Extract all information from this receipt and return it as a JSON array with the following structure:
+[
+  {
+    "name": "merchant name",
+    "address": "street address",
+    "city": "city with postal code",
+    "email": "email if available"
+  },
+  {
+    "invoice": {
+      "number": "invoice number",
+      "date": "DD.MM.YYYY",
+      "time": "HH:MM:SS",
+      "table": "table number if available"
+    }
+  },
+  {
+    "item": "item name",
+    "quantity": number,
+    "unit_price": "price with currency",
+    "total_price": "total with currency"
+  },
+  // ... more items
+  {
+    "summary": {
+      "total": "total with currency",
+      "tax_included": "tax info"
+    }
+  },
+  {
+    "server": "server name if available"
+  },
+  {
+    "contact": {
+      "phone": "phone number",
+      "fax": "fax number",
+      "email": "email"
+    }
+  }
+]
+Extract ALL items, prices, and information visible on the receipt.''')
         prompt = f"<image>\n{custom_prompt}"
         
         logging.info(f"Processing image with vLLM...")
@@ -167,12 +207,41 @@ def perform_ocr():
         
         logging.info(f"✅ Extracted {len(result)} characters")
         
-        return jsonify({
+        # Try to parse as JSON
+        import json
+        import re
+        
+        structured_data = None
+        try:
+            # Remove markdown code blocks if present
+            json_text = result
+            if '```json' in json_text:
+                json_text = re.search(r'```json\s*\n(.*?)\n```', json_text, re.DOTALL).group(1)
+            elif '```' in json_text:
+                json_text = re.search(r'```\s*\n(.*?)\n```', json_text, re.DOTALL).group(1)
+            
+            # Parse JSON
+            structured_data = json.loads(json_text)
+            logging.info("✅ Successfully parsed structured JSON data")
+        except Exception as e:
+            logging.warning(f"Could not parse as JSON: {e}")
+            # Fall back to returning raw text
+            structured_data = None
+        
+        response = {
             'success': True,
-            'text': result,
             'engine': 'vLLM',
             'model': 'deepseek-ai/DeepSeek-OCR'
-        })
+        }
+        
+        # Return structured data if available, otherwise raw text
+        if structured_data:
+            response['structured_data'] = structured_data
+            response['raw_text'] = result  # Keep raw text for reference
+        else:
+            response['text'] = result
+        
+        return jsonify(response)
         
     except Exception as e:
         logging.error(f"OCR error: {str(e)}")

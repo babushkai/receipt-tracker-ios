@@ -43,6 +43,85 @@ class DeepSeekOCRService {
     }
     
     // MARK: - OCR Extraction
+    func extractOCRResponse(from image: UIImage) async throws -> DeepSeekOCRResponse {
+        print("\n🎯 ========== DEEPSEEK-OCR EXTRACTION STARTED ==========")
+        print("📸 Original image size: \(image.size.width) x \(image.size.height)")
+        print("🧠 Using state-of-the-art DeepSeek-OCR model")
+        
+        // Preprocess image for better OCR quality
+        let preprocessedImage = preprocessImage(image)
+        print("✨ Image preprocessed for better quality")
+        
+        // Convert image to base64 with high quality
+        guard let imageData = preprocessedImage.jpegData(compressionQuality: 0.95) else {
+            print("❌ Failed to convert image to JPEG")
+            throw DeepSeekOCRError.invalidImage
+        }
+        let base64Image = imageData.base64EncodedString()
+        print("📦 Image data size: \(imageData.count / 1024)KB")
+        
+        // Create request
+        guard let url = URL(string: "\(serverURL)/ocr") else {
+            throw DeepSeekOCRError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60 // 60 second timeout for model inference
+        
+        let requestBody: [String: String] = [
+            "image": base64Image
+        ]
+        
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        
+        // Send request
+        print("📤 Sending request to DeepSeek-OCR server...")
+        let startTime = Date()
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let processingTime = Date().timeIntervalSince(startTime)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw DeepSeekOCRError.invalidResponse
+        }
+        
+        print("📥 Received response with status code: \(httpResponse.statusCode)")
+        print("⏱️  Processing time: \(String(format: "%.2f", processingTime))s")
+        
+        guard httpResponse.statusCode == 200 else {
+            throw DeepSeekOCRError.serverError(statusCode: httpResponse.statusCode)
+        }
+        
+        // Parse response
+        let ocrResponse = try JSONDecoder().decode(DeepSeekOCRResponse.self, from: data)
+        
+        guard ocrResponse.success else {
+            throw DeepSeekOCRError.extractionFailed("OCR extraction failed")
+        }
+        
+        // Use raw_text if available, otherwise text
+        let text = ocrResponse.raw_text ?? ocrResponse.text ?? ""
+        
+        print("\n✅ ========== EXTRACTION SUCCESSFUL ==========")
+        print("📝 Extracted Text Length: \(text.count) characters")
+        print("🤖 Model: \(ocrResponse.model ?? "unknown")")
+        print("🚀 Engine: \(ocrResponse.engine ?? "unknown")")
+        print("⏱️  Server processing: \(String(format: "%.2f", ocrResponse.processing_time ?? 0))s")
+        
+        if let structuredData = ocrResponse.structured_data {
+            print("📊 Structured Data: \(structuredData.count) sections")
+        }
+        
+        print("📄 RAW EXTRACTED TEXT:")
+        print("-------------------------------------------")
+        print(text)
+        print("-------------------------------------------")
+        print("✅ ========== END OF EXTRACTION ==========\n")
+        
+        return ocrResponse
+    }
+    
     func extractText(from image: UIImage) async throws -> String {
         print("\n🎯 ========== DEEPSEEK-OCR EXTRACTION STARTED ==========")
         print("📸 Original image size: \(image.size.width) x \(image.size.height)")
@@ -96,11 +175,23 @@ class DeepSeekOCRService {
         // Parse response
         let ocrResponse = try JSONDecoder().decode(DeepSeekOCRResponse.self, from: data)
         
-        let text = ocrResponse.text
+        guard ocrResponse.success else {
+            throw DeepSeekOCRError.extractionFailed("OCR extraction failed")
+        }
+        
+        // Use raw_text if available, otherwise text
+        let text = ocrResponse.raw_text ?? ocrResponse.text ?? ""
+        
         print("\n✅ ========== EXTRACTION SUCCESSFUL ==========")
         print("📝 Extracted Text Length: \(text.count) characters")
         print("🤖 Model: \(ocrResponse.model ?? "unknown")")
+        print("🚀 Engine: \(ocrResponse.engine ?? "unknown")")
         print("⏱️  Server processing: \(String(format: "%.2f", ocrResponse.processing_time ?? 0))s")
+        
+        if let structuredData = ocrResponse.structured_data {
+            print("📊 Structured Data: \(structuredData.count) sections")
+        }
+        
         print("📄 RAW EXTRACTED TEXT:")
         print("-------------------------------------------")
         print(text)
@@ -171,7 +262,6 @@ class DeepSeekOCRService {
             totalAmount: totalAmount,
             items: items,
             rawText: rawText,
-            confidence: 1.0 // DeepSeek-OCR is highly confident
         )
     }
     
@@ -196,20 +286,30 @@ class DeepSeekOCRService {
         return image
     }
     
-    // MARK: - Extraction Helpers (reused from TesseractOCRService)
+    // MARK: - Extraction Helpers
     private func extractMerchantName(from lines: [String]) -> String? {
-        // First few lines usually contain merchant name
+        // Combine first few lines that look like merchant/address info
+        var merchantLines: [String] = []
+        
         for line in lines.prefix(5) {
             // Skip lines with prices, dates, or common receipt terms
-            if line.contains(":") || line.contains("$") || line.contains("Tel") || line.contains("Tel") {
-                continue
+            if line.contains(":") || line.contains("$") || line.contains("CHF") || line.contains("EUR") ||
+               line.lowercased().contains("tel") || line.lowercased().contains("fax") || 
+               line.lowercased().contains("rech") || line.lowercased().contains("bill") {
+                break
             }
             
-            // Merchant name is usually capitalized and longer than 3 characters
+            // Merchant name/address lines are usually longer than 3 characters
             if line.count > 3 && !line.allSatisfy({ $0.isNumber }) {
-                return line
+                merchantLines.append(line)
             }
         }
+        
+        // Combine up to 2-3 lines for full merchant name/location
+        if !merchantLines.isEmpty {
+            return merchantLines.prefix(min(3, merchantLines.count)).joined(separator: " ")
+        }
+        
         return nil
     }
     
@@ -217,14 +317,18 @@ class DeepSeekOCRService {
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         
-        // Try different date formats
+        // Try different date formats (including European formats)
         let dateFormats = [
-            "MM/dd/yyyy",
-            "dd/MM/yyyy",
-            "yyyy-MM-dd",
-            "MMM dd, yyyy",
-            "MMMM dd, yyyy",
-            "dd-MM-yyyy"
+            "dd.MM.yyyy/HH:mm:ss",  // European with time: 30.07.2007/13:29:17
+            "dd.MM.yyyy HH:mm:ss",   // European with time (space)
+            "dd.MM.yyyy",             // European: 30.07.2007
+            "MM/dd/yyyy",             // US: 07/30/2007
+            "dd/MM/yyyy",             // International: 30/07/2007
+            "yyyy-MM-dd",             // ISO: 2007-07-30
+            "MMM dd, yyyy",           // Text month: Jul 30, 2007
+            "MMMM dd, yyyy",          // Full month: July 30, 2007
+            "dd-MM-yyyy",             // Dash format: 30-07-2007
+            "dd/MM/yy",               // Short year: 30/07/07
         ]
         
         for format in dateFormats {
@@ -233,8 +337,12 @@ class DeepSeekOCRService {
             // Search for date patterns in text
             let pattern = format
                 .replacingOccurrences(of: "yyyy", with: "\\d{4}")
+                .replacingOccurrences(of: "yy", with: "\\d{2}")
                 .replacingOccurrences(of: "MM", with: "\\d{2}")
                 .replacingOccurrences(of: "dd", with: "\\d{2}")
+                .replacingOccurrences(of: "HH", with: "\\d{2}")
+                .replacingOccurrences(of: "mm", with: "\\d{2}")
+                .replacingOccurrences(of: "ss", with: "\\d{2}")
                 .replacingOccurrences(of: "MMM", with: "[A-Za-z]{3}")
                 .replacingOccurrences(of: "MMMM", with: "[A-Za-z]+")
             
@@ -281,22 +389,61 @@ class DeepSeekOCRService {
         var items: [ReceiptItemData] = []
         
         for line in lines {
-            // Skip lines with total/subtotal
+            // Skip lines with total/subtotal/tax
             let lowercased = line.lowercased()
-            if lowercased.contains("total") || lowercased.contains("tax") || lowercased.contains("change") {
+            if lowercased.contains("total") || lowercased.contains("tax") || 
+               lowercased.contains("change") || lowercased.contains("mwst") ||
+               lowercased.contains("---") {
                 continue
             }
             
-            // Look for lines with prices
-            if let price = extractAmountFromLine(line) {
-                // Get item name (everything before the price)
-                let itemName = line
-                    .replacingOccurrences(of: #"\$?[\d,]+\.?\d*"#, with: "", options: .regularExpression)
-                    .trimmingCharacters(in: .whitespaces)
-                
-                if !itemName.isEmpty && itemName.count > 2 {
-                    items.append(ReceiptItemData(name: itemName, price: price))
+            // Try to parse quantity and item (format: "2xLatte Macchiato à 4.50 CHF 9.00")
+            var quantity = 1
+            var itemName = line
+            var price: Double? = nil
+            
+            // Extract quantity (e.g., "2x")
+            if let qtyRegex = try? NSRegularExpression(pattern: #"^(\d+)x"#),
+               let match = qtyRegex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+               let range = Range(match.range(at: 1), in: line) {
+                if let qty = Int(String(line[range])) {
+                    quantity = qty
                 }
+                // Remove quantity prefix from item name
+                itemName = line.replacingOccurrences(of: #"^\d+x"#, with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces)
+            }
+            
+            // Look for lines with prices - extract the LAST price (usually the total for that item)
+            let pricePattern = #"(\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2}))\s*(?:CHF|EUR|USD|€|\$|$)"#
+            if let regex = try? NSRegularExpression(pattern: pricePattern),
+               let matches = regex.matches(in: line, range: NSRange(line.startIndex..., in: line)) as? [NSTextCheckingResult],
+               !matches.isEmpty {
+                // Get the last price match (the line total, not unit price)
+                if let lastMatch = matches.last,
+                   let range = Range(lastMatch.range(at: 1), in: line) {
+                    var amountString = String(line[range])
+                        .replacingOccurrences(of: ",", with: "")
+                        .replacingOccurrences(of: " ", with: "")
+                    
+                    // Handle European decimal
+                    if amountString.contains(",") && !amountString.contains(".") {
+                        amountString = amountString.replacingOccurrences(of: ",", with: ".")
+                    }
+                    
+                    price = Double(amountString)
+                }
+            }
+            
+            // Clean up item name - remove prices, currency symbols, "à", etc.
+            itemName = itemName
+                .replacingOccurrences(of: #"[àa]\s*[\d,.\s]+\s*(?:CHF|EUR|USD|€|\$)"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"[\d,.\s]+\s*(?:CHF|EUR|USD|€|\$)"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespaces)
+            
+            // Add item if we have a valid name and price
+            if let price = price, !itemName.isEmpty && itemName.count > 2 {
+                items.append(ReceiptItemData(name: itemName, price: price, quantity: quantity))
             }
         }
         
@@ -304,14 +451,31 @@ class DeepSeekOCRService {
     }
     
     private func extractAmountFromLine(_ line: String) -> Double? {
-        // Pattern to match prices: $1.99, 1.99, $1,234.56, etc.
-        let pattern = #"\$?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)"#
+        // Pattern to match prices with various currencies:
+        // $1.99, 1.99, CHF 54.50, 4.50 CHF, €10.50, 1,234.56, etc.
+        let patterns = [
+            #"(\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2}))\s*(?:CHF|EUR|USD|€|\$)"#,  // Amount before currency
+            #"(?:CHF|EUR|USD|€|\$)\s*(\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2}))"#,  // Currency before amount
+            #"(\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2}))"#,                          // Plain amount
+        ]
         
-        if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
-           let range = Range(match.range(at: 1), in: line) {
-            let amountString = String(line[range]).replacingOccurrences(of: ",", with: "")
-            return Double(amountString)
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern),
+               let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+               let range = Range(match.range(at: 1), in: line) {
+                var amountString = String(line[range])
+                    .replacingOccurrences(of: ",", with: "")   // Remove thousands separator
+                    .replacingOccurrences(of: " ", with: "")   // Remove spaces
+                
+                // Handle European decimal separator (comma instead of dot)
+                if amountString.contains(",") && !amountString.contains(".") {
+                    amountString = amountString.replacingOccurrences(of: ",", with: ".")
+                }
+                
+                if let amount = Double(amountString) {
+                    return amount
+                }
+            }
         }
         
         return nil
@@ -319,13 +483,57 @@ class DeepSeekOCRService {
 }
 
 // MARK: - Response Models
-struct DeepSeekOCRResponse: Codable {
-    let text: String
-    let processing_time: Double?
+private struct DeepSeekOCRResponse: Codable {
+    let success: Bool
+    let text: String?
+    let structured_data: [StructuredReceiptData]?
+    let raw_text: String?
+    let engine: String?
     let model: String?
+    let processing_time: Double?
 }
 
-struct HealthResponse: Codable {
+struct StructuredReceiptData: Codable {
+    let name: String?
+    let address: String?
+    let city: String?
+    let email: String?
+    let invoice: InvoiceInfo?
+    let item: String?
+    let quantity: Int?
+    let unit_price: String?
+    let total_price: String?
+    let summary: SummaryInfo?
+    let server: String?
+    let contact: ContactInfo?
+    let conversion: ConversionInfo?
+}
+
+struct InvoiceInfo: Codable {
+    let number: String?
+    let date: String?
+    let time: String?
+    let table: String?
+}
+
+struct SummaryInfo: Codable {
+    let total: String?
+    let tax_included: String?
+}
+
+struct ContactInfo: Codable {
+    let mwst_number: String?
+    let phone: String?
+    let fax: String?
+    let email: String?
+}
+
+struct ConversionInfo: Codable {
+    let currency: String?
+    let amount: String?
+}
+
+private struct HealthResponse: Codable {
     let status: String
     let model_loaded: Bool?
     let model: String?
@@ -340,4 +548,5 @@ enum DeepSeekOCRError: Error {
     case serverError(statusCode: Int)
     case extractionFailed(String)
 }
+
 

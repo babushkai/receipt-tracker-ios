@@ -372,14 +372,14 @@ enum OCRLanguage: String, Codable {
     case multi = "multi"
 }
 
-struct HealthResponse: Codable {
+private struct HealthResponse: Codable {
     let status: String
     let service: String
     let version: String
     let languages: [String]
 }
 
-struct OCRResponse: Codable {
+private struct OCRResponse: Codable {
     let success: Bool
     let text: String?
     let lines: [String]?
