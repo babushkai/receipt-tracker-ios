@@ -29,13 +29,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 
 # Configuration
-GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
-CLOUD_TYPE = "COMMUNITY"  # COMMUNITY cloud automatically uses spot pricing
+# Use any available GPU - be flexible for faster pod creation
+GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"  
+CLOUD_TYPE = "SECURE"  # SECURE cloud is more reliable for getting pods quickly
 CONTAINER_DISK_GB = 50  # Increased for Docker build
-# Use RunPod's PyTorch image - has SSH and is cached on RunPod infrastructure
-DOCKER_IMAGE = "runpod/base:1.0.2-cuda1290-ubuntu2204"  # Verified to exist, has SSH
+# Use RunPod's base image - lightweight, has Docker daemon already running
+DOCKER_IMAGE = "runpod/base:1.0.2-cuda1290-ubuntu2204"
 POD_NAME = f"auto-build-{int(time.time())}"
-ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
+ESTIMATED_COST_PER_HOUR = 0.44  # RTX 4000 SECURE cloud cost (higher but more reliable)
 
 def generate_ssh_keypair():
     """Generate a temporary SSH key pair"""
@@ -119,6 +120,7 @@ def wait_for_pod(api_key, pod_id, timeout=900):
     }
     
     start_time = time.time()
+    check_count = 0
     
     while time.time() - start_time < timeout:
         try:
@@ -127,13 +129,26 @@ def wait_for_pod(api_key, pod_id, timeout=900):
             
             pod = response.json()
             status = pod.get('desiredStatus', 'UNKNOWN')
+            public_ip = pod.get('publicIp')
+            runtime_status = pod.get('runtime', {})
             
-            if status == 'RUNNING' and pod.get('publicIp'):
+            check_count += 1
+            
+            # Show detailed info every 30 seconds (3 checks)
+            if check_count % 3 == 0:
+                elapsed = int(time.time() - start_time)
+                print(f"   Status: {status}, Public IP: {public_ip or 'waiting...'} ({elapsed}s)")
+                if runtime_status:
+                    print(f"   Runtime: {runtime_status}")
+            else:
+                print(f"   Status: {status}...")
+            
+            # Check if pod is ready
+            if status == 'RUNNING' and public_ip:
                 print("✅ Pod is running!")
-                print(f"🌐 Public IP: {pod.get('publicIp')}")
+                print(f"🌐 Public IP: {public_ip}")
                 return pod
             
-            print(f"   Status: {status}...")
             time.sleep(10)
             
         except Exception as e:
@@ -141,6 +156,8 @@ def wait_for_pod(api_key, pod_id, timeout=900):
             time.sleep(10)
     
     print(f"❌ Pod failed to start within {timeout}s")
+    print(f"   Last known status: {status}")
+    print(f"   Last known public IP: {public_ip or 'None'}")
     return None
 
 def get_ssh_connection(pod, private_key_bytes):
