@@ -6,6 +6,7 @@ on:
     paths:
       - 'deepseek_ocr_server.py'
       - 'Dockerfile.deepseek*'
+      - 'scripts/runpod_build_automation.py'
       - '.github/workflows/build-on-runpod-automated.yml'
   workflow_dispatch:
 
