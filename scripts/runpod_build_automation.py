@@ -32,7 +32,7 @@ from cryptography.hazmat.backends import default_backend
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
 CLOUD_TYPE = "COMMUNITY"  # COMMUNITY cloud automatically uses spot pricing
 CONTAINER_DISK_GB = 30
-DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04"
+DOCKER_IMAGE = "runpod/base:0.4.0-cuda11.8.0"
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
 
@@ -214,8 +214,18 @@ def execute_build(ssh, github_repo, github_sha, registry, registry_user, registr
     build_commands = f"""
 set -e
 
-echo "📥 Installing git..."
-apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1
+echo "📥 Installing git and dependencies..."
+apt-get update -qq && apt-get install -y -qq git curl ca-certificates > /dev/null 2>&1
+
+echo "🐳 Installing Docker..."
+if ! command -v docker &> /dev/null; then
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sh /tmp/get-docker.sh > /dev/null 2>&1
+    echo "Starting Docker daemon..."
+    dockerd > /var/log/dockerd.log 2>&1 &
+    sleep 10
+fi
+docker --version
 
 echo "📦 Cloning repository..."
 cd /workspace
