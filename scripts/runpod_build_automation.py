@@ -29,14 +29,13 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 
 # Configuration
-# Use any available GPU - be flexible for faster pod creation
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"  
 CLOUD_TYPE = "SECURE"  # SECURE cloud is more reliable for getting pods quickly
 CONTAINER_DISK_GB = 50  # Increased for Docker build
-# Use RunPod's base image - lightweight, has Docker daemon already running
-DOCKER_IMAGE = "runpod/base:1.0.2-cuda1290-ubuntu2204"
+# Use RunPod's PyTorch image - has Docker pre-installed
+DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel"
 POD_NAME = f"auto-build-{int(time.time())}"
-ESTIMATED_COST_PER_HOUR = 0.44  # RTX 4000 SECURE cloud cost (higher but more reliable)
+ESTIMATED_COST_PER_HOUR = 0.44  # RTX 4000 SECURE cloud cost
 
 def generate_ssh_keypair():
     """Generate a temporary SSH key pair"""
