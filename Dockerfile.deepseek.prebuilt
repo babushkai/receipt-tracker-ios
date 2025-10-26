@@ -1,6 +1,7 @@
 # Dockerfile for DeepSeek-OCR Server using pre-built vLLM image
 # This is MUCH simpler and faster than building vLLM from scratch!
 # Use this if you want to build quickly on RunPod
+# Build date: 2025-10-26
 
 FROM vllm/vllm-openai:latest
 
