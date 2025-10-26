@@ -22,7 +22,11 @@ import paramiko
 import time
 import os
 import sys
+import tempfile
 from pathlib import Path
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
 
 # Configuration
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
@@ -32,9 +36,36 @@ DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04"
 POD_NAME = f"auto-build-{int(time.time())}"
 ESTIMATED_COST_PER_HOUR = 0.26  # RTX 4000 Ada COMMUNITY cloud cost
 
-def create_pod(api_key):
-    """Create a RunPod GPU pod using REST API"""
-    print("🚀 Creating RunPod pod...")
+def generate_ssh_keypair():
+    """Generate a temporary SSH key pair"""
+    print("🔑 Generating temporary SSH key pair...")
+    
+    # Generate RSA key pair
+    key = rsa.generate_private_key(
+        backend=default_backend(),
+        public_exponent=65537,
+        key_size=2048
+    )
+    
+    # Get private key in PEM format
+    private_key = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption()
+    )
+    
+    # Get public key in OpenSSH format
+    public_key = key.public_key().public_bytes(
+        serialization.Encoding.OpenSSH,
+        serialization.PublicFormat.OpenSSH
+    )
+    
+    print("✅ SSH key pair generated")
+    return private_key, public_key
+
+def create_pod(api_key, ssh_public_key):
+    """Create a RunPod GPU pod using REST API with SSH key"""
+    print("🚀 Creating RunPod pod with SSH access...")
     
     url = "https://rest.runpod.io/v1/pods"
     headers = {
@@ -42,6 +73,7 @@ def create_pod(api_key):
         "Content-Type": "application/json"
     }
     
+    # Add SSH public key to environment variables
     payload = {
         "name": POD_NAME,
         "imageName": DOCKER_IMAGE,
@@ -52,6 +84,9 @@ def create_pod(api_key):
         "volumeInGb": 0,
         "gpuCount": 1,
         "supportPublicIp": True,
+        "env": {
+            "PUBLIC_KEY": ssh_public_key.decode('utf-8')
+        }
     }
     
     try:
@@ -63,6 +98,7 @@ def create_pod(api_key):
         
         print(f"✅ Pod created: {pod_id}")
         print(f"📊 Cost: ${pod.get('costPerHr', 'unknown')}/hr")
+        print(f"🔐 SSH key registered with pod")
         
         return pod_id, pod
         
@@ -106,8 +142,8 @@ def wait_for_pod(api_key, pod_id, timeout=300):
     print(f"❌ Pod failed to start within {timeout}s")
     return None
 
-def get_ssh_connection(pod):
-    """Get SSH connection to pod using REST API response"""
+def get_ssh_connection(pod, private_key_bytes):
+    """Get SSH connection to pod using private key"""
     print("🔌 Connecting via SSH...")
     
     try:
@@ -133,35 +169,38 @@ def get_ssh_connection(pod):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        # RunPod uses root with SSH keys
-        # Wait a bit for SSH to be ready
-        print("⏳ Waiting for SSH to be ready...")
-        time.sleep(30)
+        # Load the private key
+        private_key = paramiko.RSAKey.from_private_key_file(private_key_bytes)
         
-        try:
-            ssh.connect(
-                hostname=ssh_host,
-                port=ssh_port,
-                username='root',
-                timeout=30,
-                look_for_keys=False,
-                allow_agent=False
-            )
-        except Exception as e:
-            print(f"⚠️  First connection attempt failed: {e}")
-            print("🔄 Retrying in 30 seconds...")
-            time.sleep(30)
-            ssh.connect(
-                hostname=ssh_host,
-                port=ssh_port,
-                username='root',
-                timeout=30,
-                look_for_keys=False,
-                allow_agent=False
-            )
+        # Wait for SSH to be ready
+        print("⏳ Waiting for SSH to be ready (60 seconds)...")
+        time.sleep(60)
         
-        print("✅ SSH connected!")
-        return ssh
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                print(f"🔄 Connection attempt {attempt + 1}/{max_retries}...")
+                ssh.connect(
+                    hostname=ssh_host,
+                    port=ssh_port,
+                    username='root',
+                    pkey=private_key,
+                    timeout=30,
+                    look_for_keys=False,
+                    allow_agent=False
+                )
+                print("✅ SSH connected!")
+                return ssh
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Attempt {attempt + 1} failed: {e}")
+                    print(f"🔄 Retrying in 30 seconds...")
+                    time.sleep(30)
+                else:
+                    raise
+        
+        return None
         
     except Exception as e:
         print(f"❌ SSH connection failed: {e}")
@@ -277,19 +316,31 @@ def main():
     pod_id = None
     ssh = None
     success = False
+    private_key_file = None
     
     try:
-        # Step 1: Create pod
-        pod_id, initial_pod = create_pod(api_key)
+        # Step 1: Generate SSH key pair
+        private_key_bytes, public_key_bytes = generate_ssh_keypair()
         
-        # Step 2: Wait for pod to be ready
+        # Save private key to temporary file
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.pem') as f:
+            f.write(private_key_bytes)
+            private_key_file = f.name
+        
+        # Make key file read-only
+        os.chmod(private_key_file, 0o600)
+        
+        # Step 2: Create pod with public key
+        pod_id, initial_pod = create_pod(api_key, public_key_bytes)
+        
+        # Step 3: Wait for pod to be ready
         pod = wait_for_pod(api_key, pod_id)
         if not pod:
             print("❌ Pod failed to start")
             sys.exit(1)
         
-        # Step 3: Connect via SSH
-        ssh = get_ssh_connection(pod)
+        # Step 4: Connect via SSH with private key
+        ssh = get_ssh_connection(pod, private_key_file)
         if not ssh:
             print("\n" + "="*70)
             print("❌ SSH automation failed - Manual build required")
@@ -338,6 +389,14 @@ def main():
         # Cleanup
         if ssh:
             ssh.close()
+        
+        # Clean up private key file
+        if private_key_file and os.path.exists(private_key_file):
+            try:
+                os.unlink(private_key_file)
+                print("🔐 Temporary SSH key cleaned up")
+            except:
+                pass
         
         if pod_id:
             terminate_pod(api_key, pod_id)

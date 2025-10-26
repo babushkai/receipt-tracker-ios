@@ -25,7 +25,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install requests paramiko
+        pip install requests paramiko cryptography
     
     - name: Verify RunPod API Key
       run: |
@@ -63,15 +63,31 @@ jobs:
     - name: Build Summary
       if: success()
       run: |
-        echo "✅ Docker image built and pushed successfully!"
+        echo ""
+        echo "════════════════════════════════════════════════════════════"
+        echo "✅ DOCKER BUILD SUCCESSFUL!"
+        echo "════════════════════════════════════════════════════════════"
+        echo ""
         echo "📦 Image: ghcr.io/${{ github.repository }}/deepseek-ocr:latest"
         echo "🏷️  Tag: ghcr.io/${{ github.repository }}/deepseek-ocr:${{ github.sha }}"
         echo "💰 Cost: ~$0.01 (3-5 minutes on RunPod spot)"
+        echo ""
+        echo "🎯 Image is ready to deploy!"
+        echo "════════════════════════════════════════════════════════════"
     
     - name: Failure Summary
       if: failure()
       run: |
-        echo "❌ Build failed"
-        echo "🔍 Check logs above for details"
-        echo "💡 Verify RUNPOD_API_KEY secret is set"
+        echo ""
+        echo "════════════════════════════════════════════════════════════"
+        echo "❌ BUILD FAILED"
+        echo "════════════════════════════════════════════════════════════"
+        echo ""
+        echo "🔍 Check the logs above for error details"
+        echo "💡 Common issues:"
+        echo "   - RUNPOD_API_KEY not set or invalid"
+        echo "   - No available GPUs (try again later)"
+        echo "   - SSH connection timeout (pod too slow to start)"
+        echo ""
+        echo "════════════════════════════════════════════════════════════"
 
