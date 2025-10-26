@@ -79,20 +79,49 @@ def wait_for_pod(pod_id, timeout=300):
     print(f"❌ Pod failed to start within {timeout}s")
     return None
 
-def get_ssh_connection(pod):
+def get_ssh_connection(pod_id):
     """Get SSH connection to pod"""
     print("🔌 Connecting via SSH...")
     
     try:
-        # Extract connection info
-        machine = pod.get('machine', {})
-        ports = machine.get('ports', {})
-        ssh_port = ports.get('22/tcp', [{}])[0].get('publicPort')
-        ssh_host = machine.get('publicIp')
+        # Get updated pod info with connection details
+        print("📡 Fetching pod connection info...")
+        pod = runpod.get_pod(pod_id)
         
-        if not ssh_port or not ssh_host:
-            print("❌ No SSH connection info available")
+        # Extract connection info from updated pod data
+        machine = pod.get('machine', {})
+        
+        # Try different fields for SSH connection
+        ssh_host = machine.get('publicIp') or machine.get('podHostId')
+        ssh_port = None
+        
+        # Look for SSH port in various places
+        if 'ports' in machine:
+            ports = machine['ports']
+            if '22/tcp' in ports:
+                port_info = ports['22/tcp']
+                if isinstance(port_info, list) and len(port_info) > 0:
+                    ssh_port = port_info[0].get('publicPort')
+                elif isinstance(port_info, dict):
+                    ssh_port = port_info.get('publicPort')
+        
+        # Check runtime info for SSH
+        if not ssh_port:
+            runtime = pod.get('runtime', {})
+            ports = runtime.get('ports', [])
+            for port in ports:
+                if port.get('privatePort') == 22:
+                    ssh_port = port.get('publicPort')
+                    break
+        
+        if not ssh_host:
+            print("❌ No SSH host available")
+            print(f"📊 Pod info: {pod}")
             return None
+            
+        if not ssh_port:
+            print("⚠️  No SSH port found, trying default port 22")
+            ssh_port = 22
         
         print(f"📡 Connecting to {ssh_host}:{ssh_port}")
         
@@ -100,21 +129,39 @@ def get_ssh_connection(pod):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        # RunPod uses root with no password by default
-        ssh.connect(
-            hostname=ssh_host,
-            port=ssh_port,
-            username='root',
-            timeout=30,
-            look_for_keys=False,
-            allow_agent=False
-        )
+        # RunPod uses root with SSH keys
+        # Wait a bit for SSH to be ready
+        print("⏳ Waiting for SSH to be ready...")
+        time.sleep(30)
+        
+        try:
+            ssh.connect(
+                hostname=ssh_host,
+                port=ssh_port,
+                username='root',
+                timeout=30,
+                look_for_keys=False,
+                allow_agent=False
+            )
+        except Exception as e:
+            print(f"⚠️  First connection attempt failed: {e}")
+            print("🔄 Retrying in 30 seconds...")
+            time.sleep(30)
+            ssh.connect(
+                hostname=ssh_host,
+                port=ssh_port,
+                username='root',
+                timeout=30,
+                look_for_keys=False,
+                allow_agent=False
+            )
         
         print("✅ SSH connected!")
         return ssh
         
     except Exception as e:
         print(f"❌ SSH connection failed: {e}")
+        print("💡 Try using RunPod web terminal or SSH manually")
         return None
 
 def execute_build(ssh, github_repo, github_sha, registry, registry_user, registry_token):
@@ -227,9 +274,11 @@ def main():
             sys.exit(1)
         
         # Step 3: Connect via SSH
-        ssh = get_ssh_connection(pod)
+        ssh = get_ssh_connection(pod_id)
         if not ssh:
             print("❌ Failed to establish SSH connection")
+            print("💡 Alternative: Use RunPod web terminal to build manually")
+            print(f"🔗 Pod URL: https://www.runpod.io/console/pods/{pod_id}")
             sys.exit(1)
         
         # Step 4: Execute build
