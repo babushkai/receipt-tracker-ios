@@ -26,10 +26,11 @@ from pathlib import Path
 
 # Configuration
 GPU_TYPE = "NVIDIA RTX 4000 Ada Generation"
-CLOUD_TYPE = "SPOT"  # Use SPOT for cheaper pricing
+CLOUD_TYPE = "COMMUNITY"  # COMMUNITY includes spot instances for cheaper pricing
 CONTAINER_DISK_GB = 30
 DOCKER_IMAGE = "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04"
 POD_NAME = f"auto-build-{int(time.time())}"
+MAX_BID_PRICE = 0.30  # Max bid per GPU per hour (RTX 4000 Ada spot ~$0.26)
 
 def create_pod():
     """Create a RunPod GPU pod"""
@@ -40,10 +41,11 @@ def create_pod():
             name=POD_NAME,
             image_name=DOCKER_IMAGE,
             gpu_type_id=GPU_TYPE,
-            cloud_type=CLOUD_TYPE,
+            cloud_type="COMMUNITY",  # COMMUNITY cloud includes spot instances
             container_disk_in_gb=CONTAINER_DISK_GB,
             ports="22/tcp",  # SSH access
             volume_in_gb=0,  # No persistent volume needed
+            bid_per_gpu=0.26,  # Max bid price per GPU per hour (for spot pricing)
         )
         
         pod_id = pod['id']
@@ -236,8 +238,8 @@ def main():
         
         # Calculate cost
         runtime_minutes = 5  # Estimated
-        cost = runtime_minutes * (0.26 / 60)  # RTX 4000 Ada spot price
-        print(f"\n💰 Estimated cost: ${cost:.3f} ({runtime_minutes} minutes)")
+        cost = runtime_minutes * (MAX_BID_PRICE / 60)  # Based on bid price
+        print(f"\n💰 Estimated cost: ${cost:.3f} ({runtime_minutes} minutes @ ${MAX_BID_PRICE}/hr)")
         
     except KeyboardInterrupt:
         print("\n⚠️  Build interrupted by user")
