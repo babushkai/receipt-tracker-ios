@@ -6,7 +6,8 @@
 FROM vllm/vllm-openai:latest
 
 # Install Flask for REST API
-RUN pip install --no-cache-dir flask pillow
+# Use --ignore-installed to handle distutils-installed blinker
+RUN pip install --no-cache-dir --ignore-installed blinker flask pillow
 
 # Set working directory
 WORKDIR /app
