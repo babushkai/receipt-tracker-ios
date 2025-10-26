@@ -20,6 +20,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # JSON Schema for structured receipt output
+# https://github.com/search?q=repo%3Avllm-project%2Fvllm%20StructuredOutputsParams&type=code
 RECEIPT_JSON_SCHEMA = {
     "type": "array",
     "items": {
@@ -78,7 +79,7 @@ try:
     # Disable HF_TRANSFER which causes issues
     os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '0'
     
-    from vllm import LLM, SamplingParams
+    from vllm import LLM, SamplingParams, StructuredOutputsParams
     from vllm.model_executor.models.deepseek_ocr import NGramPerReqLogitsProcessor
     
     # Use local model cache if available, otherwise download from HuggingFace
@@ -210,7 +211,7 @@ def perform_ocr():
         sampling_params = SamplingParams(
             temperature=0.0,  # Deterministic for OCR
             max_tokens=8192,  # Allow long outputs for documents
-            guided_json=RECEIPT_JSON_SCHEMA,  # Force valid JSON output
+            structured_outputs=StructuredOutputsParams(json=RECEIPT_JSON_SCHEMA),  # Force valid JSON output
             # ngram logit processor args (improves markdown table generation)
             extra_args=dict(
                 ngram_size=30,
