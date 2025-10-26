@@ -227,10 +227,14 @@ if ! command -v docker &> /dev/null; then
 fi
 docker --version
 
+echo "📦 Setting up build directory..."
+cd /root
+mkdir -p build-temp
+cd build-temp
+
 echo "📦 Cloning repository..."
-cd /workspace
-git clone https://github.com/{github_repo}.git build
-cd build
+git clone https://github.com/{github_repo}.git repo
+cd repo
 git checkout {github_sha}
 
 echo "🔨 Building Docker image..."
